@@ -25,5 +25,5 @@
 ## 會遮罩什麼
 
 - input、output 與 headers 中符合遮罩樣式的 key，值會換成 `***`。其他 key 的值照原樣複製。
-- 預設樣式涵蓋 `password`、`passwd`、`secret`、`token`、`cookie`、`credential`、`api_key`／`api-key`／`apikey`、`authorization` 與 session id。
+- 預設樣式涵蓋 `password`、`passwd`、`secret`、`token`、`cookie`、`credential`、`api_key`／`api-key`／`apikey`、`authorization`、`proxy-authorization` 與 session id。
 - 樣式留空即不遮罩。面板用同一個樣式隱藏 headers。

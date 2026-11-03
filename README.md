@@ -11,6 +11,8 @@ English | [繁體中文](./README.zh-TW.md)
 
 See every oRPC call your app makes (input, output, errors, validation issues, headers) in a DevTools panel.
 
+<img src="./docs/images/demo-en.gif" width="800" alt="Demo: copy failed calls as one report with a click, then paste it into GitHub, Discord or LINE">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/images/panel-calls-dark.png">
   <img src="./docs/images/panel-calls-light.png" width="800" alt="The oRPC panel: a list of calls marked as success, error or invalid, with the selected call's URL, input, headers and response body">

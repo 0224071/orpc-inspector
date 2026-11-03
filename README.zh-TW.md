@@ -11,6 +11,8 @@
 
 在 DevTools 面板看到 app 發出的每一次 oRPC 呼叫（input、output、錯誤、驗證問題、headers）。
 
+<img src="./docs/images/demo-zh-TW.gif" width="800" alt="示範：按一下就把出錯的呼叫複製成報告，貼到 GitHub、Discord 或 LINE">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/images/panel-calls-dark.png">
   <img src="./docs/images/panel-calls-light.png" width="800" alt="oRPC 面板：呼叫清單標出成功、錯誤與驗證不符，右側是選取呼叫的 URL、input、headers 與 response body">

@@ -8,6 +8,8 @@ describe('default mask pattern', () => {
     'cookie',
     'authorization',
     'Authorization',
+    'proxy-authorization',
+    'Proxy-Authorization',
     'x-api-key',
     'x-auth-token',
     'session-id',

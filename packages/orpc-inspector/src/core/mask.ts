@@ -1,5 +1,5 @@
 /** Default pattern for sensitive keys, so shared reports never leak sensitive data */
-export const DEFAULT_MASK_PATTERN = String.raw`password|passwd|secret|token|cookie|credential|api[-_]?key|^authorization$|(?:^|[-_.])session[-_]?id$`
+export const DEFAULT_MASK_PATTERN = String.raw`password|passwd|secret|token|cookie|credential|api[-_]?key|^(?:proxy-)?authorization$|(?:^|[-_.])session[-_]?id$`
 export const MASK = '***'
 
 function compileMask(pattern: string) {

@@ -51,7 +51,8 @@
   },
   "scripts": {
     "build": "tsdown && vite build --config panel/vite.config.ts",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "prepack": "node ../../scripts/package-readme.mjs"
   },
   "peerDependencies": {
     "@nuxt/kit": "^4.6.0",

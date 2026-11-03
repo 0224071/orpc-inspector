@@ -27,3 +27,5 @@ For a single call, the Input, Response and header sections in its details have i
 - Keys that match the masking pattern, in the input, the output and the headers, are replaced with `***`. Values under other keys are copied as they are.
 - The default pattern matches `password`, `passwd`, `secret`, `token`, `cookie`, `credential`, `api_key` / `api-key` / `apikey`, `authorization`, `proxy-authorization` and session ids.
 - An empty pattern turns masking off. The panel hides headers with the same pattern.
+- Response headers inside a non-oRPC backend's error data are masked too.
+- SSR records replace sensitive headers with `***` on the server, before they reach the page ([SSR](./ssr.md)).

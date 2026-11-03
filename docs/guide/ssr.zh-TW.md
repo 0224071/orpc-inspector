@@ -37,16 +37,10 @@ SSR 紀錄會寫進頁面 HTML。機敏 header 會換成 `***`，但 input、out
 
 不想用 resolver，可以直接傳 collector：`new OrpcInspectorPlugin({ collector })`。
 
-### Server 入口從哪裡載入
+## 補充
 
-Vite 設定裡有 `orpcInspector()` 時，經 Vite 載入的 SSR 入口（在 Vite dev server 上用 `vite.ssrLoadModule()`，如第 1 步）不用額外設定就會拿到 recorder：不必設 `ssr.resolve.externalConditions`，也不必加 Node 參數。插件會在 dev server 上把 `orpc-inspector` 留在 Vite 的 SSR 模組圖裡，不改其他套件的解析方式。
-
-如果在 `ssr.external` 列出 `orpc-inspector`，或設了 `ssr.external: true`，插件會讓它維持 external，由 Node 自己的條件決定拿到什麼。
-
-用一般 `node` 直接 import `orpc-inspector`、不經 Vite 模組圖的 server，仍會拿到 no-op。插件看不到這個 import，所以這種 server 要加 development 條件執行：
-
-```sh
-node --conditions=development server.js
-```
+- SSR 入口經 Vite 載入（`vite.ssrLoadModule()`，如第 1 步）就能記錄，不用額外設定。
+- 如果 `orpc-inspector` 列在 `ssr.external`，或 `ssr.external` 設成 `true`，就由 Node 自己的條件決定拿到什麼。
+- 用一般 `node` 直接 import `orpc-inspector`、不經 Vite 的 server 會拿到 no-op。改用 `node --conditions=development server.js` 執行。
 
 另見[疑難排解](./troubleshooting.zh-TW.md#少了呼叫)。以上都用於開發環境；要在 build 保留 SSR 紀錄，見 [Production build](./production.zh-TW.md#vite)。

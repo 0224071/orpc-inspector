@@ -55,8 +55,6 @@
 
 要用同一份設定分別 build 有／沒有 inspector 的版本，用環境區分：`$env: { staging: { orpcInspector: { production: true } } }`，再跑 `nuxt build --envName staging`。
 
-Nuxt DevTools v4 不會把 Vite DevTools 放進 build，所以 module 自己加（其他 module 已加就不重複）。這依賴 `@vitejs/devtools` 0.8 與 Nitro 的 public asset 規則。
-
 ## 開啟後會記錄什麼
 
 - client 與 SSR 呼叫，跟 dev 一樣。`zodLocale` 照常生效。

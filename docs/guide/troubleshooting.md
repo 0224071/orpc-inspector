@@ -10,7 +10,6 @@ English | [繁體中文](./troubleshooting.zh-TW.md)
 | Panel URL (`<base>__orpc-inspector/`) shows a disconnected screen | The URL is the page the dock loads; it does not work in its own tab | Open the panel from the DevTools dock |
 | Warning says Vite DevTools failed to load | Vite DevTools threw while loading; its error is logged above the warning | Fix that error; check that `@vitejs/devtools` is `^0.8.0` |
 | No `[orpc-inspector]` line in the dev server log | The plugin or module is not registered | Vite: add `orpcInspector()` to `plugins`. Nuxt: add `'orpc-inspector/nuxt'` to `modules` |
-| pnpm hangs while installing Nuxt DevTools | Version swapped with pnpm `overrides` | Remove the override; install `@nuxt/devtools@4` in your project |
 
 ## Calls are missing
 
@@ -25,7 +24,7 @@ English | [繁體中文](./troubleshooting.zh-TW.md)
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| The page reloads once on the first load in `nuxt dev` | `@orpc/client`, `@orpc/client/fetch` or `@orpc/contract` is in `vite.optimizeDeps.exclude`. The module adds these three to `optimizeDeps.include`, except ids you excluded | Remove them from `optimizeDeps.exclude` |
+| The page reloads once on the first load in `nuxt dev` | `@orpc/client`, `@orpc/client/fetch` or `@orpc/contract` is in `vite.optimizeDeps.exclude`. The module adds these three to `optimizeDeps.include`, except ids you excluded | Remove them from `optimizeDeps.exclude` ([Vite: dependency pre-bundling](https://vite.dev/guide/dep-pre-bundling)) |
 
 ## zod messages are not translated
 
@@ -33,7 +32,7 @@ English | [繁體中文](./troubleshooting.zh-TW.md)
 |---|---|---|
 | Dev server warns about `zodLocale` | zod 4 is not installed, or the locale name does not exist | Install zod 4; use a name from `zod/v4/locales/` |
 | Some messages stay in English | They are custom messages, zod 3 schemas, non-zod schemas, or values changed by serialization (dates, bigints) | Expected: only zod 4 default messages are translated |
-| A server 500 validation error shows no issues | Output validation failures carry no issues | Expected: it stays a plain error |
+| A server 500 validation error shows no issues | Output validation failures carry no issues | Expected: it stays a plain error ([oRPC: validation errors](https://orpc.dev/docs/advanced/validation-errors)) |
 
 ## Production build
 
@@ -43,4 +42,4 @@ English | [繁體中文](./troubleshooting.zh-TW.md)
 | Warning, and no dock on the page | `build.injection` is off | Turn it on, or load `<base>__devtools/embedded.js` yourself |
 | `vite build` does not exit | Vite's `devtools` option starts the DevTools server after building | Use the `DevTools()` plugin from `@vitejs/devtools` instead ([Production builds](./production.md#vite)) |
 | Nuxt: warning, and the build is a no-op | `@vitejs/devtools` cannot be resolved | `pnpm add -D @vitejs/devtools@^0.8.0` |
-| Nuxt: broken logo in the dock | Non-root `app.baseURL`; Vite DevTools loads its logo from `/` | Known limitation; the dock still works |
+| Nuxt: broken logo in the dock | Non-root `app.baseURL`; Vite DevTools loads its logo from `/` | Known limitation ([vitejs/devtools#583](https://github.com/vitejs/devtools/issues/583)); the dock still works |

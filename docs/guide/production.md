@@ -55,8 +55,6 @@ Set `production: true` to keep the inspector in a preview or staging build. Off 
 
 To build with and without the inspector from one config, use an environment: `$env: { staging: { orpcInspector: { production: true } } }`, then `nuxt build --envName staging`.
 
-The module adds Vite DevTools to the Nuxt build itself (unless another module already does), because Nuxt DevTools v4 does not. This depends on `@vitejs/devtools` 0.8 and Nitro's public asset rules.
-
 ## What an opted-in build records
 
 - Client and SSR calls, as in dev. `zodLocale` applies.

@@ -20,8 +20,7 @@ Bug fixes do not either, as long as they match what the existing specs require. 
 
 ## Checklist
 
-- [ ] `pnpm lint`, `pnpm typecheck` and `pnpm test` pass
-- [ ] `openspec validate --all --strict` passes
+- [ ] `pnpm check` passes (build, lint, typecheck, test, `openspec validate`)
 - [ ] All tasks in `tasks.md` are checked
 - [ ] The change is **not** archived (maintainers archive after merge)
 - [ ] README updated if the public API or setup changed

@@ -23,7 +23,8 @@ Without mise, install the Node.js and pnpm versions listed in `mise.toml`, and t
 | `pnpm build` | Build `orpc-inspector` (library and panel) |
 | `pnpm lint` / `pnpm lint:fix` | ESLint ([@antfu/eslint-config](https://github.com/antfu/eslint-config)) |
 | `pnpm typecheck` | Type-check all packages |
-| `pnpm test` / `pnpm test:watch` | Vitest |
+| `pnpm test` / `pnpm test:watch` | Vitest. Some tests use the built package, so run `pnpm build` after changing `src/` or `panel/` |
+| `pnpm check` | Build, then run every check CI runs (lint, typecheck, test, `openspec validate`) |
 | `pnpm -F @playground/vite-vue dev` | Vite + Vue playground |
 | `pnpm -F @playground/nuxt dev` | Nuxt playground |
 
@@ -100,7 +101,7 @@ After a change is merged to `main`, archive it in a follow-up PR (`/opsx:archive
 
 - Base your branch on `main` and keep it focused on one change.
 - Add or update tests for behavior changes.
-- Make sure `pnpm lint`, `pnpm typecheck`, `pnpm test` and `openspec validate --all --strict` pass. CI runs the same checks.
+- Make sure `pnpm check` passes. It builds first, then runs `pnpm lint`, `pnpm typecheck`, `pnpm test` and `openspec validate --all --strict`, the same checks as CI.
 - Update the README (setup) or `docs/guide/` (everything else), in both English and Traditional Chinese, when the public API or the setup steps change.
 
 ## Releasing (maintainers)

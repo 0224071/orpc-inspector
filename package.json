@@ -15,6 +15,7 @@
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check": "pnpm build && pnpm lint && pnpm typecheck && pnpm test && openspec validate --all --strict --no-interactive",
     "release": "bumpp packages/orpc-inspector/package.json"
   },
   "devDependencies": {

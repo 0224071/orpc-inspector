@@ -49,6 +49,7 @@ Behavior changes are planned with [OpenSpec](https://github.com/Fission-AI/OpenS
 
 **You need a change** for new features, behavior changes and breaking changes.
 **You do not need one** for typo fixes, docs, tests, dependency bumps or refactors that keep behavior the same.
+**Bug fixes** do not need one when they make the inspector behave the way `openspec/specs/` already requires or intends. Add a test that fails without the fix. If the fix changes what a spec requires, it is a behavior change and needs a change.
 
 For larger ideas, open an issue first so we can agree on the direction before you write a proposal.
 

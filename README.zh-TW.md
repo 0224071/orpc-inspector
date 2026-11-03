@@ -21,9 +21,6 @@
   <img src="./docs/images/panel-validation-light.png" width="800" alt="response 不符合 zod schema 的呼叫詳情：依路徑列出八個問題，例如 email 格式錯誤、缺少 price">
 </picture>
 
-> [!NOTE]
-> 開發中，尚未發布到 npm。
-
 ## 功能
 
 - 🔍 **所有呼叫集中檢視**：input、output、錯誤、[驗證問題](#驗證問題)與 headers，含 client 與 [SSR](./docs/guide/ssr.zh-TW.md)

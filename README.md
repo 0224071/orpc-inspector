@@ -21,9 +21,6 @@ See every oRPC call your app makes (input, output, errors, validation issues, he
   <img src="./docs/images/panel-validation-light.png" width="800" alt="Details of a call whose response does not match its zod schema: eight issues listed by path, such as an invalid email and a missing price">
 </picture>
 
-> [!NOTE]
-> Work in progress, not yet published to npm.
-
 ## Features
 
 - 🔍 **Every call in one place**: input, output, errors, [validation issues](#validation-issues) and headers, client and [SSR](./docs/guide/ssr.md)

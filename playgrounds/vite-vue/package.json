@@ -1,0 +1,30 @@
+{
+  "name": "@playground/vite-vue",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "dev:ssr": "node server.js",
+    "build:inspector": "vite build --mode inspector",
+    "preview:inspector": "vite preview --mode inspector",
+    "build:inspector:ssr": "vite build --mode inspector --ssr src/entry-server.ts --outDir dist/server && vite build --mode inspector --outDir dist/client",
+    "start:inspector:ssr": "node server.prod.js",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@orpc/client": "^1.16.1",
+    "@orpc/contract": "^1.16.1",
+    "@orpc/openapi-client": "^1.16.1",
+    "vue": "^3.5.44",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitejs/devtools": "^0.8.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "msw": "^3.0.3",
+    "orpc-inspector": "workspace:*",
+    "vite": "^8.3.5",
+    "vue-tsc": "^3.3.14"
+  }
+}

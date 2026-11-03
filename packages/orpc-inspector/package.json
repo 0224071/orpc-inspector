@@ -1,0 +1,101 @@
+{
+  "name": "orpc-inspector",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "DevTools panel for oRPC calls: inspect input, output, errors, validation issues and headers.",
+  "license": "MIT",
+  "homepage": "https://github.com/0224071/orpc-inspector#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0224071/orpc-inspector.git",
+    "directory": "packages/orpc-inspector"
+  },
+  "bugs": {
+    "url": "https://github.com/0224071/orpc-inspector/issues"
+  },
+  "keywords": [
+    "orpc",
+    "devtools",
+    "vite",
+    "nuxt",
+    "vue"
+  ],
+  "sideEffects": [
+    "./dist/client.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./dist/index.js",
+      "default": "./dist/index.prod.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./nuxt": {
+      "types": "./dist/nuxt.d.ts",
+      "default": "./dist/nuxt.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown && vite build --config panel/vite.config.ts",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@nuxt/kit": "^4.6.0",
+    "@orpc/client": "^1.16.0",
+    "@orpc/contract": "^1.16.0",
+    "@vitejs/devtools": "^0.8.0",
+    "nuxt": "^4.6.0",
+    "vite": ">=8.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@nuxt/kit": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
+      "optional": true
+    },
+    "nuxt": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "devframe": "~1.2.6"
+  },
+  "devDependencies": {
+    "@nuxt/kit": "~4.6.3",
+    "@nuxt/schema": "~4.6.3",
+    "@orpc/client": "^1.16.1",
+    "@orpc/contract": "^1.16.1",
+    "@orpc/openapi": "^1.16.1",
+    "@orpc/openapi-client": "^1.16.1",
+    "@orpc/server": "^1.16.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/devtools": "^0.8.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "happy-dom": "^21.0.4",
+    "nuxt": "~4.6.3",
+    "tailwindcss": "^4.3.3",
+    "tsdown": "^0.23.4",
+    "vite": "^8.3.5",
+    "vue": "^3.5.44",
+    "vue-tsc": "^3.3.14",
+    "zod": "^4.6.7"
+  }
+}

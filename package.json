@@ -1,0 +1,39 @@
+{
+  "name": "orpc-inspector-monorepo",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.34.5",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "prepare": "simple-git-hooks",
+    "build": "pnpm -F orpc-inspector build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "bumpp packages/orpc-inspector/package.json"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^10.0.0",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "bumpp": "^12.3.0",
+    "eslint": "^10.13.0",
+    "eslint-plugin-better-tailwindcss": "^4.10.0",
+    "lint-staged": "^17.6.0",
+    "simple-git-hooks": "^2.14.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged",
+    "commit-msg": "pnpm exec commitlint --edit \"$1\""
+  },
+  "lint-staged": {
+    "*": "eslint --fix --no-warn-ignored"
+  }
+}

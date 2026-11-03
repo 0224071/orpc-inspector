@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # changelogithub creates the GitHub Release
+      id-token: write # npm trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # changelogithub needs the previous tag
+      # Installs node, pnpm and openspec from mise.toml
+      - uses: jdx/mise-action@v5
+      - run: pnpm install --frozen-lockfile
+      # Same checks as ci.yml, which does not run on tags
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: openspec validate --all --strict --no-interactive
+
+      - name: Check whether this version is on npm
+        id: npm
+        run: |
+          version=$(node -p "require('./packages/orpc-inspector/package.json').version")
+          if npm view "orpc-inspector@$version" version > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # pnpm 10 packs the package and runs `npm publish` on the tarball.
+      # npm 11.5.1+ (Node 26 ships 11.20) exchanges the OIDC token, so no NPM_TOKEN is needed.
+      - name: Publish to npm
+        if: steps.npm.outputs.published == 'false'
+        run: pnpm -F orpc-inspector publish --no-git-checks
+
+      - name: Create GitHub Release
+        run: pnpm dlx changelogithub@15.0.5
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

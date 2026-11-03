@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The Nuxt runtime imports the core by package name; point type checking at the source instead of dist
+    "paths": {
+      "orpc-inspector": ["./src/index.ts"],
+      "orpc-inspector/client": ["./src/client/index.ts"]
+    }
+  },
+  "include": ["src", "panel", "test", "*.config.ts"]
+}

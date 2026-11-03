@@ -1,0 +1,96 @@
+/*
+ * Panel-wide styles. Only loaded by the panel page inside the DevTools dock iframe; never import this into the host app.
+ * Tailwind's preflight is left out on purpose, so elements keep the browser defaults the components were written against.
+ */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Expose the panel tokens as Tailwind colors and fonts, e.g. `bg-bg`, `text-muted`, `border-border`, `font-mono` */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-key: var(--key);
+  --color-string: var(--string);
+  --color-number: var(--number);
+  --color-boolean: var(--boolean);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --color-warn: var(--warn);
+  --color-warn-fill: var(--warn-fill);
+  --font-mono: var(--mono);
+  --font-sans: var(--sans);
+}
+
+/* Unlayered rules beat every layer, so the globals live in `base` and utilities can override them */
+@layer base {
+  :root {
+    /* Light value first, dark value second; resolved from `color-scheme` */
+    --bg: light-dark(#fff, #111);
+    --fg: light-dark(#1f2937, #e5e7eb);
+    --muted: light-dark(#9ca3af, #6b7280);
+    --border: light-dark(#e5e7eb, #2a2a2a);
+    --hover: light-dark(rgb(0 0 0 / 4%), rgb(255 255 255 / 5%));
+    --selected: light-dark(#e0f2fe, #0c2a3d);
+    --key: light-dark(#7c3aed, #c4b5fd);
+    --string: light-dark(#059669, #6ee7b7);
+    --number: light-dark(#2563eb, #93c5fd);
+    --boolean: light-dark(#d97706, #fcd34d);
+    --ok: light-dark(#10b981, #34d399);
+    --bad: light-dark(#dc2626, #f87171);
+    --bad-bg: light-dark(rgb(220 38 38 / 10%), rgb(248 113 113 / 12%));
+
+    /* Used as text color, so pick an amber with enough contrast */
+    --warn: light-dark(#b45309, #fbbf24);
+
+    /* For dots and other color blocks, brighter than the text color */
+    --warn-fill: light-dark(#f59e0b, #fbbf24);
+    --mono: ui-monospace, sfmono-regular, menlo, consolas, monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', 'Noto Sans TC', sans-serif;
+
+    color-scheme: light dark;
+  }
+
+  /* Forced by the dock theme setting (color-scheme.ts); without a class the panel follows the system */
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  :root.light {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--bg);
+  }
+
+  /* Global so child components' buttons get it too */
+  button,
+  input:not([type='checkbox']) {
+    padding: 3px 10px;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  button {
+    cursor: pointer;
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+    "vue.volar",
+    "vitest.explorer",
+    "hverlin.mise-vscode"
+  ]
+}

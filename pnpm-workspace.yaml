@@ -1,0 +1,13 @@
+minimumReleaseAgeExcludePrune: true
+
+trustPolicy: no-downgrade
+# @babel/core 7 依賴的 semver 6.3.1 沒有 provenance，被判信任降級；經使用者同意放行（nuxt devDep 需要）
+trustPolicyExclude:
+  - semver@6.3.1
+
+autoInstallPeers: false
+shellEmulator: true
+
+packages:
+  - packages/*
+  - playgrounds/*

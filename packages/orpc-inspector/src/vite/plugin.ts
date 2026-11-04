@@ -1,7 +1,9 @@
+import type { createPluginFromDevframe } from '@vitejs/devtools-kit/node'
 import type { Plugin } from 'vite'
 import { normalize, resolve } from 'node:path'
 import process from 'node:process'
-import { ORPC_INSPECTOR_DOCK_ID, ORPC_INSPECTOR_PANEL_ROUTE } from '../core/types'
+import { ORPC_INSPECTOR_PANEL_ROUTE } from '../core/types'
+import { inspectorDevtools } from './devframe'
 import { DEVTOOLS_SERVER_PLUGIN, devToolsMissingWarning, isDevToolsOptionEnabled, startupLine } from './onboarding'
 import { copyPanel, defaultPanelDir, panelMiddleware } from './panel-files'
 import { keptExternal, PACKAGE_NAME, recorderModule } from './recorder-entry'
@@ -19,28 +21,8 @@ const RESOLVED_SSR_RECORDER_MODULE_ID = `\0${RECORDER_MODULE_ID}?ssr`
 export const DEVTOOLS_BUILD_PLUGIN = 'vite:devtools:build'
 const DEVTOOLS_INJECTION_PLUGIN = 'vite:devtools:injection'
 
-const ICON = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M14 4l-4 16"/></svg>',
-)}`
-
-/** Only the parts we use; see DevToolsNodeContext in @vitejs/devtools-kit */
-interface DevToolsSetupContext {
-  docks: {
-    views: { has: (id: string) => boolean }
-    register: (entry: {
-      id: string
-      title: string
-      icon: string
-      category: string
-      defaultOrder: number
-      type: 'iframe'
-      url: string
-    }) => void
-  }
-}
-
 export type OrpcInspectorVitePlugin = Plugin & {
-  devtools: { setup: (ctx: DevToolsSetupContext) => void }
+  devtools: NonNullable<ReturnType<typeof createPluginFromDevframe>['devtools']>
 }
 
 export interface InternalPluginOptions {
@@ -83,6 +65,7 @@ export function createOrpcInspectorPlugin(options: InternalPluginOptions = {}): 
   let startupLogged = false
   /** Set in configResolved: running `vite build` with `production`, and Vite DevTools can show the panel */
   let building = false
+  let panelHosted = false
 
   return {
     name: 'orpc-inspector',
@@ -237,22 +220,12 @@ export function createOrpcInspectorPlugin(options: InternalPluginOptions = {}): 
         })
       }
       // No return, so it runs before Vite's built-in middleware (base, SPA fallback) and sees the full URL
-      server.middlewares.use(panelMiddleware(panelDir, panelRoute))
+      server.middlewares.use(panelMiddleware(panelDir, panelRoute, () => !panelHosted))
     },
     devtools: {
-      setup(ctx) {
-        if (ctx.docks.views.has(ORPC_INSPECTOR_DOCK_ID))
-          return
-        ctx.docks.register({
-          id: ORPC_INSPECTOR_DOCK_ID,
-          title: 'oRPC',
-          icon: ICON,
-          category: 'app',
-          // Order early so it isn't pushed into the dock's overflow menu
-          defaultOrder: 100,
-          type: 'iframe',
-          url: panelRoute(),
-        })
+      async setup(ctx) {
+        await inspectorDevtools(panelRoute(), building ? undefined : panelDir).setup(ctx)
+        panelHosted = true
       },
     },
   }

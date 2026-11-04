@@ -41,6 +41,9 @@ importers:
 
   packages/orpc-inspector:
     dependencies:
+      '@vitejs/devtools-kit':
+        specifier: ~0.8.0
+        version: 0.8.0(@devframes/agentic@1.2.6)(cac@7.1.0)(crossws@0.4.17(srvx@1.0.8))(srvx@1.0.8)(vite@8.3.5)
       devframe:
         specifier: ~1.2.6
         version: 1.2.6(@devframes/agentic@1.2.6)(cac@7.1.0)(srvx@1.0.8)

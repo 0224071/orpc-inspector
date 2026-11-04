@@ -117,6 +117,7 @@ describe('client build with production: true', () => {
 
     // The output root is served at base, so <base>__orpc-inspector/ is <outDir>/__orpc-inspector/
     expect(existsSync(join(outDir, '__orpc-inspector', 'index.html'))).toBe(true)
+    expect(existsSync(join(outDir, 'app', '__orpc-inspector'))).toBe(false)
     expect(hubDump(outDir)).toContain('"/app/__orpc-inspector/"')
     expect(appJs(outDir)).toContain('/app/__devtools/embedded.js')
   }, TIMEOUT)

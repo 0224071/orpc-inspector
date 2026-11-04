@@ -1,5 +1,4 @@
 import type { ViteDevServer } from 'vite'
-import type { OrpcInspectorVitePlugin } from '../../src/vite/plugin'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { createLogger, createServer, resolveConfig } from 'vite'
@@ -210,10 +209,8 @@ describe('startup line', () => {
 describe('dev server (base = /app/)', () => {
   let server: ViteDevServer
   let origin: string
-  let plugin: OrpcInspectorVitePlugin
 
   beforeAll(async () => {
-    plugin = createOrpcInspectorPlugin({ panelDir })
     server = await createServer({
       root,
       base: '/app/',
@@ -221,7 +218,9 @@ describe('dev server (base = /app/)', () => {
       configFile: false,
       optimizeDeps: { noDiscovery: true },
       server: { port: 0, ws: false },
-      plugins: [plugin],
+      plugins: [
+        createOrpcInspectorPlugin({ panelDir }),
+      ],
     })
     await server.listen()
     const address = server.httpServer!.address()
@@ -265,32 +264,6 @@ describe('dev server (base = /app/)', () => {
   it('does not serve files outside the panel directory', async () => {
     const res = await fetch(`${origin}/app/__orpc-inspector/..%2Fsecret.txt`)
     expect(await res.text()).not.toBe('secret\n')
-  })
-
-  it('registers the dock pointing to the panel page with base, only once', () => {
-    const register = vi.fn()
-    const views = new Set<string>()
-    const ctx = {
-      docks: {
-        views: {
-          has: (id: string) => views.has(id),
-        },
-        register: (entry: { id: string }) => {
-          register(entry)
-          views.add(entry.id)
-        },
-      },
-    }
-    plugin.devtools.setup(ctx)
-    plugin.devtools.setup(ctx)
-
-    expect(register).toHaveBeenCalledOnce()
-    expect(register).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'orpc-inspector',
-      title: 'oRPC',
-      type: 'iframe',
-      url: '/app/__orpc-inspector/',
-    }))
   })
 })
 

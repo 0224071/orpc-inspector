@@ -34,17 +34,30 @@ body:
     id: integration
     attributes:
       label: Integration
+      description: How is orpc-inspector integrated? Include your UI framework in Environment below.
       options:
-        - Vite + Vue
+        - Vite (Vue / React / other frameworks)
         - Nuxt
-        - Custom SSR
+        - Other / Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: affected-side
+    attributes:
+      label: Affected side
+      description: Which side is affected? Select Not sure if you cannot tell.
+      options:
+        - Browser
+        - SSR
+        - Both
+        - Not sure
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Versions of orpc-inspector, @orpc/client, Vite or Nuxt, Node.js and the browser.
+      description: Versions of orpc-inspector, @orpc/client, Vite or Nuxt, your UI framework, Node.js and the browser.
       render: text
     validations:
       required: true

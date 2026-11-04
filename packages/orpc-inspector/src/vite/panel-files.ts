@@ -38,7 +38,7 @@ async function serveFile(panelDir: string, relative: string, res: ServerResponse
 }
 
 /** Dev server middleware serving the panel under route(); the bare route without its slash redirects to it */
-export function panelMiddleware(panelDir: string, route: () => string) {
+export function panelMiddleware(panelDir: string, route: () => string, serve = () => true) {
   return (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const prefix = route()
     const pathname = req.url?.split('?')[0] ?? ''
@@ -48,7 +48,8 @@ export function panelMiddleware(panelDir: string, route: () => string) {
       res.end()
       return
     }
-    if (!pathname.startsWith(prefix))
+    // The adapter serves files with a host; keep the redirect and the no-host fallback.
+    if (!pathname.startsWith(prefix) || !serve())
       return next()
     serveFile(panelDir, pathname.slice(prefix.length), res)
       .then(served => served || next())

@@ -1,6 +1,6 @@
 /**
  * devframe internal: the dock keeps its theme setting in the page's localStorage under this key
- * (VueUse `useStorage`, raw `auto` / `light` / `dark`). Not a public API; checked with `@devframes/hub-ui` 1.2.6.
+ * (VueUse `useStorage`, raw `auto` / `light` / `dark`). Not a public API; checked with `@devframes/hub-ui` 1.3.3.
  * The panel shares the page's origin, so it can read the key and receives `storage` events when the dock changes it.
  */
 export const DOCK_COLOR_SCHEME_KEY = 'devframes-color-scheme'

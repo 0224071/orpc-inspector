@@ -3,7 +3,7 @@ export const DISCONNECTED_CAUSES = ['appPage', 'clientScript', 'standalone'] as 
 
 export type DisconnectedCause = typeof DISCONNECTED_CAUSES[number]
 
-/** devframe 1.2.6 retries the hello with backoff up to a 3s cap; after that a parent or opener that never answered likely has no page script */
+/** devframe 1.3.3 retries the hello with backoff up to a 3s cap; after that a parent or opener that never answered likely has no page script */
 export const CLIENT_SCRIPT_WAIT_MS = 3000
 
 export interface DiagnosticInput {

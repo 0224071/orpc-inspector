@@ -1,4 +1,4 @@
 [tools]
 node = "26.13.0"
-pnpm = "10.34.5"
+pnpm = "10.34.9"
 "npm:@fission-ai/openspec" = "1.15.0"

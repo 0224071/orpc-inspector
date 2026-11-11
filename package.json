@@ -2,7 +2,7 @@
   "name": "orpc-inspector-monorepo",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@10.34.9",
   "license": "MIT",
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"

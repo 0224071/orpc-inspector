@@ -1,7 +1,7 @@
 {
   "name": "orpc-inspector",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "DevTools panel for oRPC calls: inspect input, output, errors, validation issues and headers.",
   "license": "MIT",
   "homepage": "https://github.com/0224071/orpc-inspector#readme",

@@ -29,4 +29,4 @@
 ## 6. Integration checks
 
 - [x] 6.1 `pnpm check` passes
-- [ ] 6.2 Fresh-install trial in `.tmp` with the packed tarball and oRPC beta.51: plugin and manual interceptors record success, error 403 with status, invalid 400 with issues, under `--conditions=development`; the default condition gives the no-op without crashing
+- [x] 6.2 Fresh-install trial in `.tmp` with the packed tarball and oRPC beta.51: plugin and manual interceptors record success, error 403 with status, invalid 400 with issues, under `--conditions=development`; the default condition gives the no-op without crashing

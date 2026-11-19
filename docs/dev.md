@@ -47,6 +47,15 @@ The first time the dock opens, the panel must be authorized:
 2. The code expires after about 5 minutes. Once expired, click **Re-issue one-time password** in the authorization dialog and read the log again for the new code. (The dock follows the browser language, so these labels may be localized.) If authorization times out, the server log shows `Timeout waiting for rpc to be trusted`.
 3. On 5174 (middleware mode) the magic link has the wrong port (it points to 5173); enter the code manually on the 5174 page.
 
+## Fresh-install smoke test
+
+`pnpm smoke --pm <pnpm|npm> --app <vite|nuxt>` (after `pnpm build`) packs the package, installs the tarball into a new app in the OS temp folder with no lockfile, so it gets the latest published dependencies, starts the dev server on a free port and opens the oRPC panel from the dock in headless Chrome. CI runs all four combinations in `smoke.yml` on every push and daily, so an upstream release that breaks a fresh install fails there even though this repo's lockfile hides it.
+
+- It fails when `devframe` or `@devframes/hub` is installed in more than one version, or when orpc-inspector and `@vitejs/devtools` resolve different `@vitejs/devtools-kit` versions.
+- The fixtures in `scripts/smoke/fixtures/` turn off the devframe auth code (`clientAuth: false`, Nuxt `disableAuthorization`), so no code is needed.
+- On success the temp app is deleted; on failure it is kept (path in the output) with `dev.log` and `failure.png`. Pass `--keep` to keep it anyway, `--tarball <file>` to test an existing tarball (e.g. `npm pack orpc-inspector@0.1.3`), and `--dir` to choose the parent folder; it must be outside the repo.
+- Set `SMOKE_CHROME_PATH` to use another Chrome or Chromium binary.
+
 ## Dependencies
 
 - For installing Nuxt DevTools v4, see the Nuxt section of the README: install it directly as a devDependency. Don't use pnpm `overrides`; pnpm 10 hangs while resolving dependencies.

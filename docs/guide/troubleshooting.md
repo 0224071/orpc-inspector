@@ -2,6 +2,13 @@
 
 English | [繁體中文](./troubleshooting.zh-TW.md)
 
+## Install and startup
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `vite` or `nuxt dev` fails or stops at "bundling" with `DTK0014 Error setting up plugin vite:devtools:builtin … Cannot read properties of undefined (reading '_applyOptions')` | Two versions of `devframe` are installed (`pnpm why devframe` lists more than one). orpc-inspector 0.1.3 and earlier pinned devframe to 1.3.x | Update orpc-inspector to 0.1.4 or later, then run `pnpm dedupe` |
+| npm + Nuxt: `npm i -D orpc-inspector @nuxt/devtools@4 …` stops with `ERESOLVE` | Nuxt already installed Nuxt DevTools v3, and npm cannot replace it in place | Add `orpc-inspector`, `@nuxt/devtools` (`^4.0.0`) and `@nuxt/kit` (`^4.6.0`) to `devDependencies` in `package.json`, delete `node_modules` and `package-lock.json`, then run `npm install` |
+
 ## Panel does not open
 
 | Symptom | Cause | Fix |

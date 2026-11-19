@@ -76,6 +76,8 @@ inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPIL
    pnpm add -D orpc-inspector @nuxt/devtools@4 @nuxt/kit@^4.6.0
    ```
 
+   用 npm 時若出現 `ERESOLVE` 而中止，見[疑難排解](./docs/guide/troubleshooting.zh-TW.md#安裝與啟動)。
+
 2. 在 `nuxt.config.ts` 加上 module：
 
    ```ts

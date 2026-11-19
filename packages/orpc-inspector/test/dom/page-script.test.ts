@@ -37,6 +37,12 @@ async function startWithPanel() {
   return { page, panel, state }
 }
 
+/** Records as the panel shows them, newest first */
+function listOf(state: Awaited<ReturnType<typeof startWithPanel>>['state']): OrpcCall[] {
+  const { calls, order } = state.value()
+  return order.map(id => calls[id]!) as OrpcCall[]
+}
+
 const g = globalThis as Record<PropertyKey, unknown>
 
 beforeEach(() => {
@@ -57,7 +63,7 @@ describe('page script', () => {
       store.upsert(makeCall(id))
 
     const { panel, state } = await startWithPanel()
-    expect(state.value().list.map(call => call.id)).toEqual(['5', '4', '3', '2', '1'])
+    expect(listOf(state).map(call => call.id)).toEqual(['5', '4', '3', '2', '1'])
     panel.close()
   })
 
@@ -66,12 +72,59 @@ describe('page script', () => {
     const store = getOrpcInspectorStore()
 
     store.upsert(makeCall('a', { state: 'pending' }))
-    await vi.waitFor(() => expect(state.value().list).toHaveLength(1))
+    await vi.waitFor(() => expect(listOf(state)).toHaveLength(1))
 
     store.upsert(makeCall('a', { state: 'error' }))
-    await vi.waitFor(() => expect(state.value().list[0]?.state).toBe('error'))
+    await vi.waitFor(() => expect(listOf(state)[0]?.state).toBe('error'))
     // Store records are not frozen by shared state
     expect(Object.isFrozen(store.list[0])).toBe(false)
+    panel.close()
+  })
+
+  it('sends only the changed record, so updates do not copy the rest of the store', async () => {
+    const store = getOrpcInspectorStore()
+    const big = {
+      rows: Array.from({ length: 1000 }, (_, i) => ({
+        i,
+        text: 'x'.repeat(100),
+      })),
+    }
+    for (const id of ['1', '2', '3'])
+      store.upsert(makeCall(id, { output: big }))
+    store.upsert(makeCall('s', { state: 'streaming', events: [] }))
+    const { panel, state } = await startWithPanel()
+    const before = state.value().calls
+    let updates = 0
+    state.on('updated', () => updates++)
+
+    for (let n = 1; n <= 5; n++) {
+      store.upsert(makeCall('s', {
+        state: 'streaming',
+        events: Array.from({ length: n }, (_, i) => i),
+      }))
+    }
+    await vi.waitFor(() => expect(state.value().calls.s?.events).toHaveLength(5))
+    // A burst reaches the panel as at most a leading and a trailing update
+    expect(updates).toBeLessThanOrEqual(2)
+
+    const after = state.value().calls
+    for (const id of ['1', '2', '3'])
+      expect(after[id]).toBe(before[id])
+    expect(listOf(state).map(call => call.id)).toEqual(['s', '3', '2', '1'])
+    panel.close()
+  })
+
+  it('drops the oldest record from the panel when the store is full', async () => {
+    const store = getOrpcInspectorStore()
+    for (let i = 0; i < 300; i++)
+      store.upsert(makeCall(String(i)))
+    const { panel, state } = await startWithPanel()
+
+    store.upsert(makeCall('new'))
+    await vi.waitFor(() => expect(listOf(state)[0]?.id).toBe('new'))
+    expect(state.value().order).toHaveLength(300)
+    expect(Object.keys(state.value().calls)).toHaveLength(300)
+    expect(state.value().calls['0']).toBeUndefined()
     panel.close()
   })
 
@@ -82,7 +135,8 @@ describe('page script', () => {
 
     await panel.call('calls:clear')
     expect(store.list).toEqual([])
-    await vi.waitFor(() => expect(state.value().list).toEqual([]))
+    await vi.waitFor(() => expect(listOf(state)).toEqual([]))
+    expect(state.value().calls).toEqual({})
     panel.close()
   })
 
@@ -92,7 +146,7 @@ describe('page script', () => {
       makeCall('s2', { side: 'ssr' }),
     ]
     const { panel, state } = await startWithPanel()
-    expect(state.value().list.map(call => call.id)).toEqual(['s2', 's1'])
+    expect(listOf(state).map(call => call.id)).toEqual(['s2', 's1'])
     panel.close()
   })
 
@@ -127,7 +181,7 @@ describe('page script issue translation', () => {
     store.upsert(invalidCall())
 
     const { panel, state } = await startWithPanel()
-    expect(state.value().list[0]?.issues?.[0]).toMatchObject({ message: 'Invalid input', translatedMessage: '無效：string' })
+    expect(listOf(state)[0]?.issues?.[0]).toMatchObject({ message: 'Invalid input', translatedMessage: '無效：string' })
     expect(store.list[0]?.issues?.[0]).not.toHaveProperty('translatedMessage')
 
     store.upsert(makeCall('w', {
@@ -137,9 +191,9 @@ describe('page script issue translation', () => {
         { path: [], message: 'Custom', code: 'custom' },
       ],
     }))
-    await vi.waitFor(() => expect(state.value().list).toHaveLength(2))
-    expect(state.value().list[0]?.issues?.[0]).not.toHaveProperty('translatedMessage')
-    expect(state.value().list[1]?.issues?.[0]?.translatedMessage).toBe('無效：string')
+    await vi.waitFor(() => expect(listOf(state)).toHaveLength(2))
+    expect(listOf(state)[0]?.issues?.[0]).not.toHaveProperty('translatedMessage')
+    expect(listOf(state)[1]?.issues?.[0]?.translatedMessage).toBe('無效：string')
     panel.close()
   })
 
@@ -169,13 +223,13 @@ describe('page script issue translation', () => {
     ]
 
     const { panel, state } = await startWithPanel()
-    expect(state.value().list[0]?.issues?.[0]?.translatedMessage).toBe('無效：string')
+    expect(listOf(state)[0]?.issues?.[0]?.translatedMessage).toBe('無效：string')
 
     // The app then loads zod; later publishes keep the SSR translation
     config.localeError = issue => `Invalid input: expected ${String(issue.expected)}`
     getOrpcInspectorStore().upsert(makeCall('c1'))
-    await vi.waitFor(() => expect(state.value().list).toHaveLength(2))
-    expect(state.value().list[1]?.issues?.[0]?.translatedMessage).toBe('無效：string')
+    await vi.waitFor(() => expect(listOf(state)).toHaveLength(2))
+    expect(listOf(state)[1]?.issues?.[0]?.translatedMessage).toBe('無效：string')
     panel.close()
   })
 
@@ -184,7 +238,7 @@ describe('page script issue translation', () => {
     store.upsert(invalidCall())
 
     const { panel, state } = await startWithPanel()
-    expect(state.value().list).toEqual(store.list)
+    expect(listOf(state)).toEqual(store.list)
     panel.close()
   })
 })

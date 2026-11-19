@@ -108,8 +108,11 @@ export interface OrpcCall {
   eventCount?: number
 }
 
+/** Published to the panel keyed by id, so updating one record patches only that record */
 export interface OrpcCallsState {
-  list: OrpcCall[]
+  calls: Record<string, OrpcCall>
+  /** Record ids, newest first */
+  order: string[]
 }
 
 // InPageChannelProtocol requires a Record index signature, which interfaces can't implicitly satisfy, so use a type

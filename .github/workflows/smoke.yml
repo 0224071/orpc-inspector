@@ -1,0 +1,53 @@
+name: Smoke
+
+# Installs the packed package into fresh Vite and Nuxt apps with no lockfile, so the latest
+# published dependencies are used, and opens the oRPC panel from the dock.
+# Catches upstream releases that break a fresh install even when this repo's lockfile is unchanged.
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
+  pull_request:
+  schedule:
+    - cron: '23 4 * * *' # daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    # Same-repo branches are covered by `push`; run `pull_request` only for forks
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    name: ${{ matrix.pm }} + ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        pm: [pnpm, npm]
+        app: [vite, nuxt]
+    steps:
+      - uses: actions/checkout@v7
+      # Installs node, pnpm and openspec from mise.toml
+      - uses: jdx/mise-action@v5
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Uses the runner's preinstalled Google Chrome
+      - run: pnpm smoke --pm ${{ matrix.pm }} --app ${{ matrix.app }} --dir "$RUNNER_TEMP/smoke"
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-${{ matrix.pm }}-${{ matrix.app }}
+          path: |
+            ${{ runner.temp }}/smoke/*/dev.log
+            ${{ runner.temp }}/smoke/*/failure.png
+            ${{ runner.temp }}/smoke/*/app/package.json
+            ${{ runner.temp }}/smoke/*/app/pnpm-lock.yaml
+            ${{ runner.temp }}/smoke/*/app/package-lock.json
+          if-no-files-found: ignore

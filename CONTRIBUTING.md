@@ -25,6 +25,7 @@ Without mise, install the Node.js and pnpm versions listed in `mise.toml`, and t
 | `pnpm typecheck` | Type-check all packages |
 | `pnpm test` / `pnpm test:watch` | Vitest. Some tests use the built package, so run `pnpm build` after changing `src/` or `panel/` |
 | `pnpm check` | Build, then run every check CI runs (lint, typecheck, test, `openspec validate`) |
+| `pnpm smoke --pm <pnpm\|npm> --app <vite\|nuxt>` | Pack the package, install it into a fresh app with the latest dependencies and open the panel. Run `pnpm build` first; needs Google Chrome |
 | `pnpm -F @playground/vite-vue dev` | Vite + Vue playground |
 | `pnpm -F @playground/nuxt dev` | Nuxt playground |
 

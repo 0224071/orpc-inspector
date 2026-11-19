@@ -66,6 +66,9 @@ export const contract = {
   fail: oc.route({ method: 'GET', path: '/fail' }),
   flaky: oc.route({ method: 'GET', path: '/flaky' }),
   stream: oc.route({ method: 'POST', path: '/stream' }).input(shape({ count: 'number' })).output(eventIterator(primitive('number'))),
+  slow: oc.route({ method: 'POST', path: '/slow' }).input(shape({ ms: 'number', tag: 'string' })),
+  streamFail: oc.route({ method: 'POST', path: '/stream-fail' }).input(shape({ count: 'number' })).output(eventIterator(primitive('number'))),
+  drip: oc.route({ method: 'POST', path: '/drip' }).input(shape({ count: 'number', ms: 'number' })).output(eventIterator(primitive('number'))),
 }
 
 export type TestClient = ContractRouterClient<typeof contract>
@@ -94,6 +97,21 @@ export function createServer() {
     stream: os.stream.handler(async function* ({ input }) {
       for (let i = 1; i <= input.count; i++)
         yield i
+    }),
+    slow: os.slow.handler(async ({ input }) => {
+      await new Promise(resolve => setTimeout(resolve, input.ms))
+      return input.tag
+    }),
+    streamFail: os.streamFail.handler(async function* ({ input }) {
+      for (let i = 0; i < input.count; i++)
+        yield i
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'stream broke' })
+    }),
+    drip: os.drip.handler(async function* ({ input }) {
+      for (let i = 1; i <= input.count; i++) {
+        await new Promise(resolve => setTimeout(resolve, input.ms))
+        yield i
+      }
     }),
   })
 

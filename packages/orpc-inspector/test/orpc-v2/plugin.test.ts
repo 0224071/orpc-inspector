@@ -376,3 +376,117 @@ describe('v2 createOrpcInspectorInterceptors', () => {
     expect(first).toMatchObject({ state: 'invalid', issuesOf: 'output' })
   })
 })
+
+/** The fixture server ignores the request signal; abort the request and the body the way fetch does */
+function abortable(server: ReturnType<typeof createServer>): ReturnType<typeof createServer> {
+  const wrap = (handle: (request: Request) => Promise<Response>) => (request: Request) => new Promise<Response>((resolve, reject) => {
+    const { signal } = request
+    if (signal.aborted)
+      return reject(signal.reason)
+    signal.addEventListener('abort', () => reject(signal.reason))
+    handle(request).then(response => resolve(response.body
+      ? new Response(response.body.pipeThrough(new TransformStream(), { signal }), response)
+      : response), reject)
+  })
+  return {
+    rpcFetch: wrap(server.rpcFetch),
+    openapiFetch: wrap(server.openapiFetch),
+  }
+}
+
+describe.each(kinds)('v2 abort (%s)', (kind) => {
+  const setup = () => createClient(kind, abortable(createServer()), {
+    plugins: [
+      new OrpcInspectorPlugin(),
+    ],
+  })
+
+  it('a call aborted in flight is cancelled with no error, and the caller still gets the abort error', async () => {
+    const controller = new AbortController()
+    const reason = new Error('user left')
+    const pending = setup().slow({ ms: 50, tag: 'a' }, { signal: controller.signal })
+    controller.abort(reason)
+
+    await expect(pending).rejects.toBe(reason)
+    const [call] = calls()
+    expect(call!.state).toBe('cancelled')
+    expect(call!.error).toBeUndefined()
+  })
+
+  it('a stream aborted after two events is cancelled with no error and keeps the events', async () => {
+    const controller = new AbortController()
+    const iterator = await setup().drip({ count: 5, ms: 5 }, { signal: controller.signal })
+    const values: number[] = []
+    await expect((async () => {
+      for await (const value of iterator) {
+        values.push(value)
+        if (values.length === 2)
+          controller.abort()
+      }
+    })()).rejects.toThrow()
+
+    expect(values).toEqual([1, 2])
+    const [call] = calls()
+    expect(call).toMatchObject({
+      state: 'cancelled',
+      events: [1, 2],
+      eventCount: 2,
+    })
+    expect(call!.error).toBeUndefined()
+  })
+
+  it('a stream that fails without an abort stays an error and keeps its events', async () => {
+    await expect((async () => {
+      for await (const _ of await setup().streamFail({ count: 2 })) {
+        // Read until it fails
+      }
+    })()).rejects.toThrow()
+
+    const [call] = calls()
+    expect(call).toMatchObject({
+      state: 'error',
+      events: [0, 1],
+      eventCount: 2,
+    })
+    expect(call!.error).toBeDefined()
+  })
+})
+
+describe('v2 stream reconnect', () => {
+  it('marks how many events came before each reconnect attempt', async () => {
+    const client = createClient('rpc', createServer(), {
+      plugins: [
+        new OrpcInspectorPlugin(),
+        new RetryLinkPlugin({
+          default: { retry: 2, retryDelay: 0 },
+        }),
+      ],
+    })
+    const values: number[] = []
+    await expect((async () => {
+      for await (const value of await client.streamFail({ count: 2 }))
+        values.push(value)
+    })()).rejects.toThrow()
+
+    expect(values).toEqual([0, 1, 0, 1, 0, 1])
+    const [call] = calls()
+    expect(call!.events).toEqual([0, 1, 0, 1, 0, 1])
+    expect(call!.attempts!.map(attempt => attempt.eventsBefore)).toEqual([undefined, 2, 4])
+  })
+
+  it('a retried plain call has no marker', async () => {
+    const client = createClient('rpc', createServer(), {
+      plugins: [
+        new OrpcInspectorPlugin(),
+        new RetryLinkPlugin({
+          default: { retry: 3, retryDelay: 0 },
+        }),
+      ],
+    })
+    await client.flaky()
+    const [call] = calls()
+    expect(call!.attempts).toHaveLength(3)
+    for (const attempt of call!.attempts!)
+      expect(attempt).not.toHaveProperty('eventsBefore')
+  })
+})

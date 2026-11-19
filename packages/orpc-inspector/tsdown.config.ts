@@ -16,6 +16,8 @@ export default defineConfig([
     entry: {
       'index': 'src/index.ts',
       'index.prod': 'src/index.prod.ts',
+      'v2': 'src/v2.ts',
+      'v2.prod': 'src/v2.prod.ts',
       'vite': 'src/vite/index.ts',
       'nuxt': 'src/nuxt/module.ts',
       'client': 'src/client/index.ts',

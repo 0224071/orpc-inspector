@@ -25,3 +25,12 @@ export function resolveSink(collector?: CallSink): CallSink | undefined {
   }
   return (globalThis as { [RESOLVER_KEY]?: CollectorResolver })[RESOLVER_KEY]?.()
 }
+
+/** Options shared by the link plugin and interceptors of every oRPC major */
+export interface OrpcInspectorOptions {
+  /**
+   * Collector to write records to (usually the current server request's `OrpcInspectorCollector`).
+   * When omitted: the browser writes to the global store; the server asks the resolver set via `setCollectorResolver`.
+   */
+  collector?: CallSink
+}

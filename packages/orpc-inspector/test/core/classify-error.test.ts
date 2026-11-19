@@ -83,6 +83,33 @@ describe('classifyError', () => {
     expect(fields.output).toBeUndefined()
   })
 
+  it('an oRPC error other than BAD_REQUEST with a validation cause is an output failure', () => {
+    const error = new ORPCError('INTERNAL_SERVER_ERROR', {
+      message: 'Output validation failed',
+      cause: new ValidationError({
+        message: 'output',
+        issues,
+        data: {
+          status: ['x'],
+        },
+      }),
+    })
+    expect(classifyError(error)).toMatchObject({
+      state: 'invalid',
+      issuesOf: 'output',
+      output: {
+        status: ['x'],
+      },
+      issues: [
+        {
+          path: ['status', 0],
+          message: 'Invalid option',
+        },
+      ],
+      error: { name: 'ORPCError', code: 'INTERNAL_SERVER_ERROR' },
+    })
+  })
+
   it('records a backend 400 with Standard Schema issues as server input issues', () => {
     const error = new ORPCError('BAD_REQUEST', {
       data: { issues },

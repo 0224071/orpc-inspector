@@ -80,11 +80,15 @@ For an oRPC v2 error decoded from an HTTP response, the system SHALL record the 
 - **THEN** the record's error has code `BAD_REQUEST` and no status
 
 ### Requirement: Non-oRPC error responses on v2
-When a v2 link rejects a response that is not in oRPC's format, the system SHALL record state `error` with the error's name and message, the response status as its status, and the response status, headers and body as its data, masking headers under the same rules as error data on v1.
+When a v2 link rejects a response that is not in oRPC's format, the system SHALL record state `error` with the error's name and message, the response status as its status, and the response status, headers and body as its data, masking headers under the same rules as error data on v1. A body oRPC left unread SHALL be recorded as a placeholder without reading it.
 
-#### Scenario: Proxy answers with HTML
-- **WHEN** a gateway in front of the v2 server answers 502 with an HTML body
-- **THEN** the record has state `error`, error name `MalformedResponseError`, error status 502, and error data containing that status and body
+#### Scenario: Gateway answers with JSON
+- **WHEN** a gateway in front of the v2 server answers 502 with the JSON body `{ "message": "Bad gateway" }`
+- **THEN** the record has state `error`, error name `MalformedResponseError`, error status 502, and error data containing status 502 and that body
+
+#### Scenario: Gateway answers with HTML
+- **WHEN** the gateway answers 502 with an HTML body that oRPC does not read
+- **THEN** the error data's body is the placeholder `[ReadableStream]`, and the stream on the thrown error is still unread
 
 ### Requirement: Request URL on v2 links
 For v2 links the system SHALL record as url the request URL that oRPC v2 passes to transport interceptors, which can be a path without origin. The rest of the transport details SHALL follow the `call-recording` capability.

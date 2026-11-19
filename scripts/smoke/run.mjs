@@ -1,6 +1,7 @@
 // Fresh-install smoke test: packs orpc-inspector, installs the tarball into a new Vite or Nuxt app outside the repo
 // with no lockfile (so the latest published dependencies), starts the dev server and opens the oRPC panel from the dock.
-// usage: node scripts/smoke/run.mjs --pm <pnpm|npm> --app <vite|nuxt> [--tarball <file>] [--dir <work dir>] [--keep]
+// --version installs that version from the npm registry instead of a tarball, waiting until the registry serves it.
+// usage: node scripts/smoke/run.mjs --pm <pnpm|npm> --app <vite|nuxt> [--tarball <file> | --version <x.y.z>] [--dir <work dir>] [--keep]
 import { spawn, spawnSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
@@ -16,12 +17,13 @@ const { values: args } = parseArgs({
     pm: { type: 'string' },
     app: { type: 'string' },
     tarball: { type: 'string' },
+    version: { type: 'string' },
     dir: { type: 'string' },
     keep: { type: 'boolean', default: false },
   },
 })
-if (!['pnpm', 'npm'].includes(args.pm) || !['vite', 'nuxt'].includes(args.app)) {
-  console.error('usage: node scripts/smoke/run.mjs --pm <pnpm|npm> --app <vite|nuxt> [--tarball <file>] [--dir <work dir>] [--keep]')
+if (!['pnpm', 'npm'].includes(args.pm) || !['vite', 'nuxt'].includes(args.app) || (args.tarball && args.version)) {
+  console.error('usage: node scripts/smoke/run.mjs --pm <pnpm|npm> --app <vite|nuxt> [--tarball <file> | --version <x.y.z>] [--dir <work dir>] [--keep]')
   process.exit(2)
 }
 const isWindows = process.platform === 'win32'
@@ -88,6 +90,49 @@ function packTarball(dest) {
   if (!file)
     throw new Error(`pnpm pack wrote no tarball to ${dest}`)
   return join(dest, file)
+}
+
+const REGISTRY = 'https://registry.npmjs.org'
+
+/** Polls the metadata installers read until it lists `version`; right after a publish, the CDN may still serve the old document */
+async function waitForRegistry(version, timeoutMs) {
+  const url = `${REGISTRY}/orpc-inspector`
+  const deadline = Date.now() + timeoutMs
+  while (true) {
+    try {
+      const res = await fetch(url, {
+        headers: { accept: 'application/vnd.npm.install-v1+json' },
+        signal: AbortSignal.timeout(15_000),
+      })
+      if (res.ok && (await res.json()).versions?.[version])
+        return
+    }
+    catch {}
+    if (Date.now() > deadline)
+      throw new Error(`${url} did not list ${version} within ${timeoutMs / 1000}s`)
+    log(`waiting for the registry to list orpc-inspector@${version}`)
+    await new Promise(r => setTimeout(r, 15_000))
+  }
+}
+
+/** Retries the install; a mirror or cache can lag behind the registry document */
+async function install(appDir, attempts) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      if (args.pm === 'pnpm')
+        run('pnpm', ['install', '--ignore-workspace'], appDir)
+      else
+        run('npm', ['install', '--no-audit', '--no-fund'], appDir)
+      return
+    }
+    catch (error) {
+      if (attempt >= attempts)
+        throw error
+      log(`install failed (attempt ${attempt} of ${attempts}); retrying in 30s`)
+      rmSync(join(appDir, 'node_modules'), { recursive: true, force: true })
+      await new Promise(r => setTimeout(r, 30_000))
+    }
+  }
 }
 
 /** Versions of each named package found anywhere under node_modules (npm nesting and pnpm's .pnpm store) */
@@ -331,12 +376,19 @@ async function main() {
   let dev
   let ok = false
   try {
-    const tarball = args.tarball
-      ? resolve(args.tarball)
-      : packTarball(workDir)
+    let spec
+    if (args.version) {
+      await waitForRegistry(args.version, 600_000)
+      spec = args.version
+    }
+    else {
+      const tarball = args.tarball
+        ? resolve(args.tarball)
+        : packTarball(workDir)
+      spec = `file:${tarball.replaceAll('\\', '/')}`
+    }
     const appDir = join(workDir, 'app')
     cpSync(fileURLToPath(new URL(`fixtures/${args.app}/`, import.meta.url)), appDir, { recursive: true })
-    const spec = `file:${tarball.replaceAll('\\', '/')}`
     writeFileSync(join(appDir, 'package.json'), `${JSON.stringify({
       name: 'orpc-inspector-smoke',
       private: true,
@@ -344,10 +396,7 @@ async function main() {
       ...MANIFESTS[args.app](spec),
     }, null, 2)}\n`)
 
-    if (args.pm === 'pnpm')
-      run('pnpm', ['install', '--ignore-workspace'], appDir)
-    else
-      run('npm', ['install', '--no-audit', '--no-fund'], appDir)
+    await install(appDir, args.version ? 3 : 1)
 
     const versions = scanVersions(appDir, [
       'orpc-inspector',
@@ -365,6 +414,8 @@ async function main() {
           : v).join(', ')}`)
       }
     }
+    if (args.version && packageVersion(packageDir(appDir, 'orpc-inspector')) !== args.version)
+      throw new Error(`installed orpc-inspector ${packageVersion(packageDir(appDir, 'orpc-inspector'))}, expected ${args.version}`)
     const duplicated = SINGLE_VERSION.filter(name => versions.get(name).size > 1)
     if (duplicated.length)
       throw new Error(`more than one version installed of ${duplicated.join(', ')}; the DevTools dock fails to start when they differ`)

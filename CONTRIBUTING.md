@@ -25,7 +25,7 @@ Without mise, install the Node.js and pnpm versions listed in `mise.toml`, and t
 | `pnpm typecheck` | Type-check all packages |
 | `pnpm test` / `pnpm test:watch` | Vitest. Some tests use the built package, so run `pnpm build` after changing `src/` or `panel/` |
 | `pnpm check` | Build, then run every check CI runs (lint, typecheck, test, `openspec validate`) |
-| `pnpm smoke --pm <pnpm\|npm> --app <vite\|nuxt>` | Pack the package, install it into a fresh app with the latest dependencies and open the panel. Run `pnpm build` first; needs Google Chrome |
+| `pnpm smoke --pm <pnpm\|npm> --app <vite\|nuxt>` | Pack the package, install it into a fresh app with the latest dependencies and open the panel. Run `pnpm build` first; needs Google Chrome. `--version x.y.z` installs that version from npm instead |
 | `pnpm -F @playground/vite-vue dev` | Vite + Vue playground |
 | `pnpm -F @playground/nuxt dev` | Nuxt playground |
 
@@ -125,12 +125,18 @@ If npm does not let you add a trusted publisher before the package exists, do th
 ### Cutting a release
 
 1. Switch to `main` and pull, so your local branch matches GitHub.
-2. Run `pnpm release` and choose the version. bumpp updates `packages/orpc-inspector/package.json`, commits `chore: release vX.Y.Z`, tags `vX.Y.Z` and pushes both.
-3. Watch the Release workflow on GitHub Actions. It runs build, lint, typecheck, test and `openspec validate`, publishes to npm, then creates the GitHub Release.
+2. Run `pnpm release` and choose the version. It first runs a preflight ([`scripts/release-preflight.mjs`](./scripts/release-preflight.mjs)): it checks that `main` is clean and matches `origin/main`, and that the CI and Smoke workflows passed on GitHub for that commit (through `gh`). Then it runs `pnpm check` and `pnpm smoke --pm pnpm --app vite`, which takes a few minutes and needs Google Chrome; set `SMOKE=all` to run all four combinations. If the preflight fails, nothing is bumped, committed or tagged. Then bumpp updates `packages/orpc-inspector/package.json`, commits `chore: release vX.Y.Z`, tags `vX.Y.Z` and pushes both.
+3. Watch the Release workflow on GitHub Actions:
+   1. **check** runs build, lint, typecheck, test and `openspec validate`. **smoke** installs the package into fresh apps with that day's dependencies (pnpm and npm, Vite and Nuxt), the same jobs as [`smoke.yml`](./.github/workflows/smoke.yml).
+   2. **release** runs only if both pass. It publishes to npm, then creates the GitHub Release from the commits.
+   3. **verify-published** installs the new version from npm into a fresh Vite app with npm. It waits up to 10 minutes for the registry to list the version.
+4. Read the generated GitHub Release and add what commit subjects cannot say, such as migration steps or which entries are not stable yet.
 
-If a check fails, nothing is published, and `main` already holds the version bump. Delete the tag (`git tag -d vX.Y.Z` and `git push origin :refs/tags/vX.Y.Z`), push the fix to `main`, then tag the fixed commit again (`git tag vX.Y.Z` and `git push origin vX.Y.Z`).
+If check or smoke fails, nothing is published, and `main` already holds the version bump. Delete the tag (`git tag -d vX.Y.Z` and `git push origin :refs/tags/vX.Y.Z`), push the fix to `main`, then tag the fixed commit again (`git tag vX.Y.Z` and `git push origin vX.Y.Z`). If smoke failed because of an upstream release and no change here is needed, rerun the failed jobs instead.
 
-If the job fails after publishing, rerun it. The publish step is skipped when the version is already on npm.
+If the release job fails after publishing, rerun it. The publish step is skipped when the version is already on npm.
+
+If verify-published fails, the version on npm is broken for new installs. Reproduce it with `pnpm smoke --pm npm --app vite --version X.Y.Z`, then release a fixed patch. Until then, consider `npm deprecate orpc-inspector@X.Y.Z "<reason>"`.
 
 ## License
 

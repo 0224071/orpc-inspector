@@ -24,9 +24,9 @@
 
 ## 5. Docs
 
-- [ ] 5.1 README / README.zh-TW and `docs/guide/` (link, troubleshooting, production as needed, both languages): which entry to import for v1 and v2, the tested beta, "put the inspector last", url without origin on v2; verify the code samples match the exported API
+- [x] 5.1 README / README.zh-TW and `docs/guide/` (link, troubleshooting, production as needed, both languages): which entry to import for v1 and v2, the tested beta, "put the inspector last", url without origin on v2; verify the code samples match the exported API
 
 ## 6. Integration checks
 
-- [ ] 6.1 `pnpm check` passes
+- [x] 6.1 `pnpm check` passes
 - [ ] 6.2 Fresh-install trial in `.tmp` with the packed tarball and oRPC beta.51: plugin and manual interceptors record success, error 403 with status, invalid 400 with issues, under `--conditions=development`; the default condition gives the no-op without crashing

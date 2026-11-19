@@ -39,6 +39,7 @@ SSR 紀錄會寫進頁面 HTML。機敏 header 會換成 `***`，但 input、out
 
 ## 補充
 
+- 用 oRPC 2.0 beta 時，同樣的名稱改從 `orpc-inspector/v2` 匯入（[oRPC v2](./link.zh-TW.md#orpc-v2beta)）。
 - SSR 入口經 Vite 載入（`vite.ssrLoadModule()`，如第 1 步）就能記錄，不用額外設定。
 - 如果 `orpc-inspector` 列在 `ssr.external`，或 `ssr.external` 設成 `true`，就由 Node 自己的條件決定拿到什麼。
 - 用一般 `node` 直接 import `orpc-inspector`、不經 Vite 的 server 會拿到 no-op。改用 `node --conditions=development server.js` 執行。

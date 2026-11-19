@@ -23,6 +23,8 @@ English | [繁體中文](./troubleshooting.zh-TW.md)
 | Symptom | Cause | Fix |
 |---|---|---|
 | No calls at all | `OrpcInspectorPlugin` is not on the link | Add it to the link's `plugins` ([Vite](../../README.md#vite-vue--react--other-frameworks), [Nuxt](../../README.md#nuxt)) |
+| Creating the link throws `Cannot read properties of undefined (reading 'interceptors')` | oRPC 2.0 beta with the plugin from `orpc-inspector`, the 1.x entry | Import from `orpc-inspector/v2` ([oRPC v2](./link.md#orpc-v2-beta)) |
+| Nuxt on oRPC 2.0 beta: same error, or a type error on `plugins` | The module reads the `@orpc/client` version from the project root and found 1.x or nothing (e.g. it is installed only in a layer) | Install `@orpc/client` 2.x in the app, or import `OrpcInspectorPlugin` from `orpc-inspector/v2` yourself |
 | No SSR calls in a hand-written SSR server | The server imports `orpc-inspector` with plain `node`, outside Vite, so it gets the no-op; or `ssr.external` keeps it external | Load the SSR entry through Vite with `orpcInspector()` in the config, or run with `node --conditions=development` ([SSR](./ssr.md#good-to-know)) |
 | No SSR calls in Nuxt | Link is created once and shared across requests | Create the link inside a Nuxt plugin or `setup`, per request |
 | A batch request is not shown | `BatchLinkPlugin` is used | Expected: the panel shows each procedure request, not the combined batch |

@@ -39,6 +39,7 @@ To skip the resolver, pass the collector directly: `new OrpcInspectorPlugin({ co
 
 ## Good to know
 
+- On oRPC 2.0 beta, import the same names from `orpc-inspector/v2` ([oRPC v2](./link.md#orpc-v2-beta)).
 - Load the SSR entry through Vite (`vite.ssrLoadModule()`, as in step 1) and recording works with no extra settings.
 - If `orpc-inspector` is in `ssr.external`, or `ssr.external` is `true`, Node's own conditions decide what it gets.
 - A server that imports `orpc-inspector` with plain `node`, outside Vite, gets the no-op. Run it with `node --conditions=development server.js`.

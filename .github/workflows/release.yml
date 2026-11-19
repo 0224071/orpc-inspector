@@ -8,29 +8,45 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  # Same checks as ci.yml, which does not run on tags
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # changelogithub creates the GitHub Release
-      id-token: write # npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0 # changelogithub needs the previous tag
       # Installs node, pnpm and openspec from mise.toml
       - uses: jdx/mise-action@v5
       - run: pnpm install --frozen-lockfile
-      # Same checks as ci.yml, which does not run on tags
       - run: pnpm build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: openspec validate --all --strict --no-interactive
 
+  # Fresh installs with today's dependencies, pnpm/npm × Vite/Nuxt; any failure blocks the publish
+  smoke:
+    uses: ./.github/workflows/smoke.yml
+
+  release:
+    needs: [check, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # changelogithub creates the GitHub Release
+      id-token: write # npm trusted publishing (OIDC)
+    outputs:
+      version: ${{ steps.npm.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # changelogithub needs the previous tag
+      - uses: jdx/mise-action@v5
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
       - name: Check whether this version is on npm
         id: npm
         run: |
           version=$(node -p "require('./packages/orpc-inspector/package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           if npm view "orpc-inspector@$version" version > /dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
           else
@@ -48,3 +64,24 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Installs the version users now get from npm. A failure here means the published package is broken.
+  # npm, not pnpm: a pnpm minimumReleaseAge would skip a version published minutes ago.
+  verify-published:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25 # includes waiting for the registry
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm smoke --pm npm --app vite --version ${{ needs.release.outputs.version }} --dir "$RUNNER_TEMP/smoke"
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-published-npm-vite
+          path: |
+            ${{ runner.temp }}/smoke/*/dev.log
+            ${{ runner.temp }}/smoke/*/failure.png
+            ${{ runner.temp }}/smoke/*/app/package-lock.json
+          if-no-files-found: ignore

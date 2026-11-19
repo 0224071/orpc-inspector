@@ -49,11 +49,11 @@ The first time the dock opens, the panel must be authorized:
 
 ## Fresh-install smoke test
 
-`pnpm smoke --pm <pnpm|npm> --app <vite|nuxt>` (after `pnpm build`) packs the package, installs the tarball into a new app in the OS temp folder with no lockfile, so it gets the latest published dependencies, starts the dev server on a free port and opens the oRPC panel from the dock in headless Chrome. CI runs all four combinations in `smoke.yml` on every push and daily, so an upstream release that breaks a fresh install fails there even though this repo's lockfile hides it.
+`pnpm smoke --pm <pnpm|npm> --app <vite|nuxt>` (after `pnpm build`) packs the package, installs the tarball into a new app in the OS temp folder with no lockfile, so it gets the latest published dependencies, starts the dev server on a free port and opens the oRPC panel from the dock in headless Chrome. CI runs all four combinations in `smoke.yml` on every push, daily and before every publish (`release.yml` calls it), so an upstream release that breaks a fresh install fails there even though this repo's lockfile hides it.
 
 - It fails when `devframe` or `@devframes/hub` is installed in more than one version, or when orpc-inspector and `@vitejs/devtools` resolve different `@vitejs/devtools-kit` versions.
 - The fixtures in `scripts/smoke/fixtures/` turn off the devframe auth code (`clientAuth: false`, Nuxt `disableAuthorization`), so no code is needed.
-- On success the temp app is deleted; on failure it is kept (path in the output) with `dev.log` and `failure.png`. Pass `--keep` to keep it anyway, `--tarball <file>` to test an existing tarball (e.g. `npm pack orpc-inspector@0.1.3`), and `--dir` to choose the parent folder; it must be outside the repo.
+- On success the temp app is deleted; on failure it is kept (path in the output) with `dev.log` and `failure.png`. Pass `--keep` to keep it anyway, `--tarball <file>` to test an existing tarball, `--version <x.y.z>` to install a published version from npm (it waits up to 10 minutes for the registry to list it and retries the install), and `--dir` to choose the parent folder; it must be outside the repo.
 - Set `SMOKE_CHROME_PATH` to use another Chrome or Chromium binary.
 
 ## Dependencies

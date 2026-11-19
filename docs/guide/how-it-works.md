@@ -26,6 +26,14 @@ flowchart LR
 
 The inspector only watches the client side of the link, so the backend can be anything the link talks to.
 
+## Retries, streams and cancelled calls
+
+- A call retried by `ClientRetryPlugin` is one record. When it made more than one attempt, its details list each attempt: method, status (or **no response** when the request failed) and URL. The summary shows the last attempt.
+- A call that returns an event iterator shows its events under **Events**, each labeled with its position in the stream. A record keeps the last 100 events and the total count.
+- When a stream reconnects, for example through `ClientRetryPlugin`, a divider marks where the new attempt's events start.
+- A call is **Cancelled** when the caller stops reading its stream early, or aborts the call's `AbortSignal` (for example when a query library cancels a query). Cancelled calls do not count as errors and are left out of the error report. Events received before the cancel are kept.
+- `Map` values are recorded as arrays of `[key, value]` entries, and `Set` values as arrays of their values.
+
 ## Terms
 
 | Term | Meaning |

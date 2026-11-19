@@ -20,11 +20,16 @@
 3. 在「問題訊息 → 訊息」選「只用原文」、「譯文」或「譯文，後附原文」。譯文需要 [`zodLocale`](./zod-locale.zh-TW.md)，沒有譯文的 issue 仍用原文。
 4. 在「遮罩」設定 key 樣式（正規表示式，不分大小寫）。
 
-單筆報告：呼叫詳情的 Input、Response 與 header 區塊可切換是否納入，選取另一筆呼叫時會重設。
+單筆報告：呼叫詳情的 Input、Response 與 header 區塊可切換是否納入，選取另一筆呼叫時會重設。沒有回應內容的串流，Response 的切換鈕在「事件」區。
+
+## 重試與串流
+
+- 嘗試超過一次的呼叫，請求欄位會多一行，例如 `Attempts: 3 (503 → 503 → 200)`。跟著 Request 區塊。
+- 串流呼叫的事件接在回應後面，標題寫出數量，例如 `Events (150, last 100)`。重新連線過的會依嘗試分組（`attempt 1`、`attempt 2`…）。跟著 Response 區塊，遮罩與裁切方式和回應相同。
 
 ## 會遮罩什麼
 
-- input、output 與 headers 中符合遮罩樣式的 key，值會換成 `***`。其他 key 的值照原樣複製。
+- input、output、串流事件與 headers 中符合遮罩樣式的 key，值會換成 `***`。其他 key 的值照原樣複製。
 - 預設樣式涵蓋 `password`、`passwd`、`secret`、`token`、`cookie`、`credential`、`api_key`／`api-key`／`apikey`、`authorization`、`proxy-authorization` 與 session id。
 - 樣式留空即不遮罩。面板用同一個樣式隱藏 headers。
 - 非 oRPC 後端的錯誤 data 裡帶的回應 headers 也會遮罩。

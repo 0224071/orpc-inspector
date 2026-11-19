@@ -29,6 +29,16 @@ describe('panel i18n', () => {
     expect(t('panel.copyFailed')).toBe('複製失敗')
   })
 
+  it('describes stream events and reconnects in every language', () => {
+    expect(tc('detail.eventCount', 1)).toBe('1 event')
+    expect(tc('detail.eventCount', 150)).toBe('150 events')
+    expect(t('detail.reconnect', { attempt: 2 })).toBe('Reconnected · attempt 2')
+    locale.value = 'zh-TW'
+    expect(tc('detail.eventCount', 150)).toBe('150 個事件')
+    expect(t('detail.eventsKept', { kept: 100 })).toBe('只顯示最後 100 個')
+    expect(t('detail.noResponse')).toBe('無回應')
+  })
+
   it('fills placeholders', () => {
     expect(t('toolbar.copyErrors', { count: 3 })).toBe('Copy error report 3')
     expect(t('reportMenu.copyAs', { name: 'LINE' })).toBe('Copy as LINE')

@@ -15,6 +15,10 @@ export function toPlain(value: unknown): unknown {
         if (typeof v === 'bigint') {
           return `${v}n`
         }
+        // Same shapes as oRPC's serializer: entries for Map, values for Set
+        if (v instanceof Map || v instanceof Set) {
+          return Array.from(v)
+        }
         if (typeof Blob !== 'undefined' && v instanceof Blob) {
           return `[${v.constructor.name} ${v.size} bytes]`
         }

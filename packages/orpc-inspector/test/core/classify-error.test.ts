@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/client'
 import { ValidationError } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
-import { classifyError } from '../../src/core/classify-error'
+import { classifyError, toPlain } from '../../src/core/classify-error'
 import { toHeaderRecord } from '../../src/core/headers'
 
 describe('toHeaderRecord', () => {
@@ -374,5 +374,33 @@ describe('server input validation errors', () => {
       cause: new ValidationError({ message: 'input', issues: measured.issues, data: {} }),
     }))
     expect(fields.issuesSource).toBeUndefined()
+  })
+})
+
+describe('toPlain', () => {
+  it('records a Map as entries and a Set as values', () => {
+    expect(toPlain({
+      m: new Map([
+        ['a', 1],
+      ]),
+      s: new Set(['x']),
+    })).toEqual({
+      m: [
+        ['a', 1],
+      ],
+      s: ['x'],
+    })
+  })
+
+  it('converts values nested inside a Map or a Set', () => {
+    expect(toPlain(new Set([
+      new Map([
+        [1, 2n],
+      ]),
+    ]))).toEqual([
+      [
+        [1, '2n'],
+      ],
+    ])
   })
 })

@@ -10,7 +10,7 @@ export const ORPC_INSPECTOR_PANEL_ROUTE = '/__orpc-inspector/'
 /** Window variable holding SSR records, read when the page script starts */
 export const ORPC_INSPECTOR_SSR_GLOBAL = '__ORPC_INSPECTOR_SSR__'
 
-/** streaming: event iterator is being consumed; cancelled: the consumer stopped early */
+/** streaming: event iterator is being consumed; cancelled: the consumer stopped early or the call's signal was aborted */
 export type OrpcCallState = 'pending' | 'streaming' | 'success' | 'error' | 'invalid' | 'cancelled'
 
 /** zod issue parameters kept so zod locales can rebuild the message; flat, mirroring zod issue fields */
@@ -72,6 +72,8 @@ export interface OrpcCallAttempt {
   /** Absent when the transport failed (e.g. network down) */
   status?: number
   responseHeaders?: OrpcHeaders
+  /** Set on a stream reconnect: events the call had received before this attempt */
+  eventsBefore?: number
 }
 
 export interface OrpcCall {

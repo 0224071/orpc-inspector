@@ -28,6 +28,9 @@ oRPC 1.x 把 `OrpcInspectorPlugin` 放進 link 的 `plugins` 任一位置（2.0 
 
 oRPC 2.0 還在 beta，link plugin 的運作方式和 1.x 不同。改從 `orpc-inspector/v2` 匯入，不是 `orpc-inspector`。inspector 以 `2.0.0-beta.51` 測過；之後的 beta 可能又改 plugin API。
 
+> [!WARNING]
+> oRPC 2.0 正式版之前，`orpc-inspector/v2` 會跟著它的 beta 走，orpc-inspector 的 minor 版本就可能改動它，包括不相容的改動。要固定的話，用 `~` 把 orpc-inspector 鎖在同一個 minor 版本（例如 `~0.2.0`）。根入口 `orpc-inspector`（oRPC 1.x）不受影響。
+
 ```ts
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'

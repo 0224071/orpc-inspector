@@ -28,6 +28,9 @@ On oRPC 1.x, add `OrpcInspectorPlugin` anywhere in the link's `plugins` (for 2.0
 
 oRPC 2.0 is in beta, and its link plugins work differently from 1.x. Import from `orpc-inspector/v2` instead of `orpc-inspector`. The inspector is tested with `2.0.0-beta.51`; later betas may change the plugin API again.
 
+> [!WARNING]
+> Until oRPC 2.0 is stable, `orpc-inspector/v2` follows its betas and may change in a minor release of orpc-inspector, breaking changes included. To keep it fixed, pin orpc-inspector to one minor version with `~` (for example `~0.2.0`). The root entry `orpc-inspector` (oRPC 1.x) is not affected.
+
 ```ts
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'

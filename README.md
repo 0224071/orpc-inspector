@@ -21,7 +21,7 @@ See every oRPC call your app makes (input, output, errors, validation issues, he
 | DevTools | `@vitejs/devtools` 0.8 | Nuxt DevTools v4 (v3 has no dock) |
 | oRPC | `@orpc/client` and `@orpc/contract` 1.16+ (1.x), or 2.0 beta | same |
 
-On oRPC 2.0 beta (tested with `2.0.0-beta.51`), import from `orpc-inspector/v2` instead of `orpc-inspector`; see [oRPC v2](./docs/guide/link.md#orpc-v2-beta). Nuxt picks the right one for you.
+On oRPC 2.0 beta (tested with `2.0.0-beta.51`), import from `orpc-inspector/v2` instead of `orpc-inspector`; see [oRPC v2](./docs/guide/link.md#orpc-v2-beta). Nuxt picks the right one for you. Until oRPC 2.0 is stable, the `/v2` entry may change in a minor release.
 
 The inspector watches the client only. The backend can be an oRPC server or any REST API through [`OpenAPILink`](https://orpc.dev/docs/openapi/client/openapi-link).
 

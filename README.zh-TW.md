@@ -21,7 +21,7 @@
 | DevTools | `@vitejs/devtools` 0.8 | Nuxt DevTools v4（v3 沒有 dock） |
 | oRPC | `@orpc/client` 與 `@orpc/contract` 1.16 以上（1.x），或 2.0 beta | 同左 |
 
-用 oRPC 2.0 beta（以 `2.0.0-beta.51` 測過）時，改從 `orpc-inspector/v2` 匯入，不是 `orpc-inspector`；見 [oRPC v2](./docs/guide/link.zh-TW.md#orpc-v2beta)。Nuxt 會自動選對。
+用 oRPC 2.0 beta（以 `2.0.0-beta.51` 測過）時，改從 `orpc-inspector/v2` 匯入，不是 `orpc-inspector`；見 [oRPC v2](./docs/guide/link.zh-TW.md#orpc-v2beta)。Nuxt 會自動選對。oRPC 2.0 正式版之前，`/v2` 入口可能在 minor 版本就有改動。
 
 inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPILink`](https://orpc.dev/docs/openapi/client/openapi-link) 連的任何 REST API。
 

@@ -40,6 +40,8 @@ export function syncDockBadge(
   subscribe: (fn: (list: OrpcCall[]) => void) => void,
 ) {
   let update: ((patch: Partial<DockEntry>) => void) | undefined
+  /** Last badge sent to the dock; stream events change the store many times a second, so only changes are sent */
+  let shown: string | undefined
 
   const attach = () => {
     const ctx = (globalThis as { [CLIENT_CONTEXT_KEY]?: HubClientContext })[CLIENT_CONTEXT_KEY]
@@ -47,9 +49,11 @@ export function syncDockBadge(
     if (!ctx || !serverEntry) {
       return false
     }
+    const badge = toBadge(getList())
+    shown = badge.badge
     update = ctx.docks.register({
       ...serverEntry,
-      ...toBadge(getList()),
+      ...badge,
     }, true).update
     return true
   }
@@ -58,5 +62,13 @@ export function syncDockBadge(
     const timer = setInterval(() => attach() && clearInterval(timer), POLL_MS)
   }
 
-  subscribe(list => update?.(toBadge(list)))
+  subscribe((list) => {
+    if (!update)
+      return
+    const badge = toBadge(list)
+    if (badge.badge === shown)
+      return
+    shown = badge.badge
+    update(badge)
+  })
 }

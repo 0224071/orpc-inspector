@@ -1,4 +1,4 @@
-import type { OrpcCall, OrpcInspectorProtocol } from '../core/types'
+import type { OrpcCall, OrpcCallsState, OrpcInspectorProtocol } from '../core/types'
 import { createPageScriptChannel } from 'devframe/in-page-channel'
 import { hydrateOrpcInspector } from '../core/ssr'
 import { getOrpcInspectorStore } from '../core/store'
@@ -10,22 +10,84 @@ const STARTED_KEY = Symbol.for('orpc-inspector:page-script')
 
 type PageScriptChannel = ReturnType<typeof createPageScriptChannel<OrpcInspectorProtocol>>
 
-/** Store replaces a call object whenever it changes, so caching by object only re-translates changed calls */
-const translated = new WeakMap<OrpcCall, OrpcCall>()
-
-/** Copy published to the panel: issues gain `translatedMessage` when a translator is registered; the store is untouched */
-function toPublished(list: OrpcCall[]): OrpcCall[] {
+/**
+ * Copy of one record published to the panel: issues gain `translatedMessage` when a translator is registered.
+ * Shared state freezes what it receives, so the store's own record stays untouched
+ */
+function toPublished(call: OrpcCall): OrpcCall {
   const translator = getIssueTranslator()
-  if (!translator)
-    return structuredClone(list)
-  return structuredClone(list.map((call) => {
-    let result = translated.get(call)
-    if (!result) {
-      result = translateCall(call, translator)
-      translated.set(call, result)
+  return structuredClone(translator
+    ? translateCall(call, translator)
+    : call)
+}
+
+/** Bursts of store changes (stream events) reach the panel at most this often; the store itself updates at once */
+const PUBLISH_INTERVAL_MS = 50
+
+/** Runs at once when idle, otherwise once at the end of the interval */
+function throttle(fn: () => void, ms: number) {
+  let last = -Infinity
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const run = () => {
+    timer = undefined
+    last = performance.now()
+    fn()
+  }
+  return () => {
+    if (timer !== undefined)
+      return
+    const wait = last + ms - performance.now()
+    if (wait <= 0)
+      run()
+    else
+      timer = setTimeout(run, wait)
+  }
+}
+
+function sameOrder(a: readonly string[], b: readonly string[]) {
+  return a.length === b.length && a.every((id, i) => id === b[i])
+}
+
+/**
+ * Keeps the published state in step with the store. The store replaces a record object whenever it changes,
+ * so only records whose object differs from the last published one are copied; the rest keep their frozen copies
+ */
+function createPublisher() {
+  const sources = new Map<string, OrpcCall>()
+
+  function initial(list: OrpcCall[]): OrpcCallsState {
+    const calls: Record<string, OrpcCall> = {}
+    for (const call of list) {
+      calls[call.id] = toPublished(call)
+      sources.set(call.id, call)
     }
-    return result
-  }))
+    return {
+      calls,
+      order: list.map(call => call.id),
+    }
+  }
+
+  function update(draft: OrpcCallsState, list: OrpcCall[]) {
+    const ids = new Set<string>()
+    for (const call of list) {
+      ids.add(call.id)
+      if (sources.get(call.id) !== call) {
+        draft.calls[call.id] = toPublished(call)
+        sources.set(call.id, call)
+      }
+    }
+    for (const id of sources.keys()) {
+      if (!ids.has(id)) {
+        delete draft.calls[id]
+        sources.delete(id)
+      }
+    }
+    const order = list.map(call => call.id)
+    if (!sameOrder(order, draft.order))
+      draft.order = order
+  }
+
+  return { initial, update }
 }
 
 /**
@@ -52,19 +114,18 @@ export function startPageScript(): PageScriptChannel {
   g[STARTED_KEY] = channel
 
   // Subscribe before awaiting shared state so calls in between aren't missed; not awaited so app startup isn't blocked.
-  // Shared state freezes objects passed in, so always pass copies to keep the store's own records mutable
+  // Each update sends the panel a patch with only the changed records, so its cost doesn't grow with the store
+  const publisher = createPublisher()
   const state = channel.sharedState.get('calls', {
-    initialValue: {
-      list: toPublished(store.list),
-    },
+    initialValue: publisher.initial(store.list),
   })
   syncDockBadge(() => store.list, store.subscribe)
 
-  store.subscribe((list) => {
+  store.subscribe(throttle(() => {
     void state.then(s => s.mutate((draft) => {
-      draft.list = toPublished(list)
+      publisher.update(draft, store.list)
     }))
-  })
+  }, PUBLISH_INTERVAL_MS))
 
   return channel
 }

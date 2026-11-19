@@ -6,14 +6,19 @@ type Listener<T> = (value: T) => void
 
 /** The devframe channel the panel connects to; holds the shared call list */
 const channel = vi.hoisted(() => {
-  const updated = new Set<Listener<{ list: unknown[] }>>()
-  let list: unknown[] = []
+  interface State { calls: Record<string, unknown>, order: string[] }
+  const updated = new Set<Listener<State>>()
+  let list: { id: string }[] = []
+  const toState = (): State => ({
+    calls: Object.fromEntries(list.map(item => [item.id, item])),
+    order: list.map(item => item.id),
+  })
   const call = vi.fn(async (_name: string) => {})
   return {
     call,
     setCalls(next: unknown[]) {
-      list = next
-      updated.forEach(fn => fn({ list }))
+      list = next as { id: string }[]
+      updated.forEach(fn => fn(toState()))
     },
     reset() {
       list = []
@@ -27,8 +32,8 @@ const channel = vi.hoisted(() => {
       },
       sharedState: {
         get: async () => ({
-          value: () => ({ list }),
-          on: (event: string, fn: Listener<{ list: unknown[] }>) => {
+          value: toState,
+          on: (event: string, fn: Listener<State>) => {
             if (event === 'updated') {
               updated.add(fn)
             }

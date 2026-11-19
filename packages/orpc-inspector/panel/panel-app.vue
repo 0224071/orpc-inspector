@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OrpcCall, OrpcCallIssue, OrpcInspectorProtocol } from '../src/core/types'
+import type { OrpcCall, OrpcCallIssue, OrpcCallsState, OrpcInspectorProtocol } from '../src/core/types'
 import type { CopyResult, CopyTarget } from './clipboard'
 import type { IssueGroup } from './group-issues'
 import type { MessageKey } from './i18n'
@@ -52,10 +52,11 @@ function retry() {
 }
 
 const calls = shallowRef<OrpcCall[]>([])
+const toList = (state: OrpcCallsState) => state.order.map(id => state.calls[id]!)
 void channel.sharedState.get('calls').then((state) => {
-  calls.value = state.value().list as OrpcCall[]
+  calls.value = toList(state.value() as OrpcCallsState)
   state.on('updated', (full) => {
-    calls.value = full.list
+    calls.value = toList(full)
   })
 })
 

@@ -34,6 +34,8 @@ Alternative: match `error.name === 'AbortError'`. `controller.abort(reason)` rej
 
 A cancelled record keeps no `error`. The panel draws `error` in the red error box and the report treats it as a failure; a cancel is neither.
 
+Confirmed by the maintainer in review.
+
 ### Reconnect marker: `eventsBefore` on the attempt
 
 `OrpcCallAttempt` gains an optional `eventsBefore: number`. `recordTransport()` sets it to the call's `eventCount` when the call already has `events`, which only happens after the first attempt returned an iterator.
@@ -44,9 +46,13 @@ Alternatives:
 
 The marker uses absolute positions, so it stays right after older events are dropped: event `i` of `events` is at position `eventCount - events.length + i`.
 
+Confirmed by the maintainer in review.
+
 ### `Map` and `Set` in `toPlain`
 
 The replacer returns `Array.from(value)` for both: entries for `Map`, values for `Set`. `JSON.stringify` then walks the returned array, so nested values still go through the replacer. This matches the shape oRPC's RPC serializer puts on the wire. An object keyed by the map's keys would read better for string keys but loses non-string keys and looks like a plain object.
+
+Confirmed by the maintainer in review.
 
 ### Shared stream view
 
@@ -57,10 +63,14 @@ A new `panel/stream-view.ts` turns a record into the event list to show: each ev
 - Attempts: a compact list in the Request part, shown only for more than one attempt.
 - Events: an Events part in the Response part, shown for records with `eventCount` defined. The Body part is shown for such records only when there is a body value; when it is hidden, the Events part carries the Response copy toggle (`output`). When both are shown, the toggle stays on Body and covers both.
 
+Confirmed by the maintainer in review.
+
 ### Report
 
 - `Attempts` is one more field under the Request section: `3 (503 → 503 → 200)`, `no response` for a failed transport.
 - Events are a JSON block after the response block, under the Response (`output`) section: a list, or an object keyed `attempt 1`, `attempt 2`, … when the stream reconnected. The label carries the count, e.g. `Events (150, last 100)`. They go through `maskSensitive` and `trimJson` like the response. When the report is over its length limit, dropping the Response section drops the events too, so `fitLength` needs no change.
+
+Confirmed by the maintainer in review.
 
 ## Risks / Trade-offs
 
@@ -77,20 +87,20 @@ Level: normal. Reversibility: mostly reversible (panel layout, report text); two
 
 | Item | Where | Source or agent | Handling |
 |---|---|---|---|
-| Aborted call recorded as `cancelled` | design: Abort | source | decision point 1 (the details) |
-| Detect abort from `signal.aborted`, not the error name | design: Abort | agent | decision point 1 |
-| Cancelled record keeps no error; events before the abort kept | design: Abort; spec call-recording | agent | decision point 1 |
-| Failure racing an abort is recorded as `cancelled` | design: Risks | agent | decision point 1 |
-| `Map` as entries, `Set` as values | design: Map and Set | agent (source asked for a decision) | decision point 2 |
-| `Map` / `Set` handled as part of this change, not a bug fix | proposal | agent (source asked for a decision) | decision point 3 |
-| Reconnect boundary on the attempt (`eventsBefore`), absolute positions | design: Reconnect marker | agent (boundary itself from source) | decision point 4 |
+| Aborted call recorded as `cancelled` | design: Abort | source | decision point 1 (the details), confirmed |
+| Detect abort from `signal.aborted`, not the error name | design: Abort | agent | decision point 1, confirmed |
+| Cancelled record keeps no error; events before the abort kept | design: Abort; spec call-recording | agent | decision point 1, confirmed |
+| Failure racing an abort is recorded as `cancelled` | design: Risks | agent | decision point 1, confirmed |
+| `Map` as entries, `Set` as values | design: Map and Set | agent (source asked for a decision) | decision point 2, confirmed |
+| `Map` / `Set` handled as part of this change, not a bug fix | proposal | agent (source asked for a decision) | decision point 3, confirmed |
+| Reconnect boundary on the attempt (`eventsBefore`), absolute positions | design: Reconnect marker | agent (boundary itself from source) | decision point 4, confirmed |
 | Older records have no marker and show no dividers | design: Risks | agent | implementation |
 | Shared `panel/stream-view.ts` helper | design: Shared stream view | agent | implementation |
-| Attempt list only for more than one attempt, in the Request part | design: Panel layout; spec inspector-panel | agent | decision point 5 |
-| Events part, empty body hidden for streams, copy toggle moves to Events | design: Panel layout; spec inspector-panel | agent | decision point 5 |
-| Long streams make the details long; keep 100 events, no extra cap | design: Risks, Non-Goals | agent | decision point 5 |
-| Attempts line and events in reports, under existing toggles, no new setting | design: Report; spec inspector-panel | agent (source asked for a decision) | decision point 6 |
-| Events masked and trimmed like the response | design: Report | agent (follows existing report masking) | decision point 6 |
-| Per-attempt headers (already recorded) left out of the panel | proposal; design: Non-Goals | agent | decision point 7 |
+| Attempt list only for more than one attempt, in the Request part | design: Panel layout; spec inspector-panel | agent | decision point 5, confirmed |
+| Events part, empty body hidden for streams, copy toggle moves to Events | design: Panel layout; spec inspector-panel | agent | decision point 5, confirmed |
+| Long streams make the details long; keep 100 events, no extra cap | design: Risks, Non-Goals | agent | decision point 5, confirmed |
+| Attempts line and events in reports, under existing toggles, no new setting | design: Report; spec inspector-panel | agent (source asked for a decision) | decision point 6, confirmed |
+| Events masked and trimmed like the response | design: Report | agent (follows existing report masking) | decision point 6, confirmed |
+| Per-attempt headers (already recorded) left out of the panel | proposal; design: Non-Goals | agent | decision point 7, confirmed |
 | Batching / dedupe labels, placeholder URL, Web Workers left out | proposal | source | follows the source |
 | Keep edits local because of the parallel oRPC v2 work | design: Risks | agent | implementation |

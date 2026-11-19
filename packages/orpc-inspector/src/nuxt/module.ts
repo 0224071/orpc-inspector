@@ -5,7 +5,7 @@ import { addImports, addPlugin, addTemplate, addVitePlugin, createResolver, defi
 import { startupLine } from '../vite/onboarding'
 import { defaultPanelDir } from '../vite/panel-files'
 import { createOrpcInspectorPlugin, DEVTOOLS_BUILD_PLUGIN } from '../vite/plugin'
-import { appendOrpcClientDeps, checkNuxtDevTools, isNuxtDevToolsEnabled, nuxtPanelUrl, readNuxtDevToolsVersion } from './onboarding'
+import { appendOrpcClientDeps, checkNuxtDevTools, isNuxtDevToolsEnabled, nuxtPanelUrl, orpcLinkMajor, readInstalledVersion, readNuxtDevToolsVersion } from './onboarding'
 
 export interface OrpcInspectorModuleOptions {
   /** zod locale used to translate zod's default issue messages shown in the panel, e.g. `zh-TW`; resolved from the project's zod */
@@ -22,13 +22,20 @@ const HUB_DIRNAME = '__devtools'
 
 type ResolvedModule = ReturnType<typeof createResolver>['resolve']
 
+/** Runtime file suffix for the project's oRPC major: the v2 composable and no-op types import `orpc-inspector/v2` */
+function orpcSuffix(nuxt: Nuxt) {
+  return orpcLinkMajor(readInstalledVersion(nuxt.options.rootDir, '@orpc/client')) === 2
+    ? '.v2'
+    : ''
+}
+
 /** Same runtime as dev: real composable, SSR collector into the payload, page script and hydration */
 function addRuntime(nuxt: Nuxt, resolve: ResolvedModule) {
   // Runtime files import #app, so Nuxt must compile them
   nuxt.options.build.transpile.push(resolve('./runtime'))
   addImports({
     name: 'useOrpcInspectorPlugin',
-    from: resolve('./runtime/composables'),
+    from: resolve(`./runtime/composables${orpcSuffix(nuxt)}`),
   })
   addPlugin({
     src: resolve('./runtime/plugin.server'),
@@ -41,15 +48,16 @@ function addRuntime(nuxt: Nuxt, resolve: ResolvedModule) {
 }
 
 /** Production default: the no-op is generated into buildDir from a template so the output has no trace of the package path, not even in comments */
-function addNoop(resolve: ResolvedModule) {
+function addNoop(nuxt: Nuxt, resolve: ResolvedModule) {
   const noop = addTemplate({
     filename: 'orpc-link-noop.mjs',
-    getContents: () => 'export function useOrpcInspectorPlugin() {\n  return { init() {} }\n}\n',
+    // Works with both majors: oRPC v1 ignores the name and init's return value; v2 needs both
+    getContents: () => 'export function useOrpcInspectorPlugin() {\n  return { name: \'orpc-inspector\', init: options => options }\n}\n',
   })
-  // Types come from runtime/noop
+  // Types come from runtime/noop (or noop.v2)
   addTemplate({
     filename: 'orpc-link-noop.d.ts',
-    getContents: () => `export { useOrpcInspectorPlugin } from ${JSON.stringify(resolve('./runtime/noop'))}\n`,
+    getContents: () => `export { useOrpcInspectorPlugin } from ${JSON.stringify(resolve(`./runtime/noop${orpcSuffix(nuxt)}`))}\n`,
   })
   addImports({
     name: 'useOrpcInspectorPlugin',
@@ -157,7 +165,7 @@ const module: NuxtModule<OrpcInspectorModuleOptions> = defineNuxtModule<OrpcInsp
         }
         useLogger('orpc-inspector').warn('production: true needs @vitejs/devtools installed in the project; the inspector is left out of this build')
       }
-      addNoop(resolve)
+      addNoop(nuxt, resolve)
       return
     }
 

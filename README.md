@@ -76,6 +76,8 @@ Run `vite` and open **oRPC** in the DevTools dock. The first time, enter the aut
    pnpm add -D orpc-inspector @nuxt/devtools@4 @nuxt/kit@^4.6.0
    ```
 
+   With npm, if this stops with `ERESOLVE`, see [Troubleshooting](./docs/guide/troubleshooting.md#install-and-startup).
+
 2. Add the module in `nuxt.config.ts`:
 
    ```ts

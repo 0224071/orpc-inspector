@@ -2,6 +2,13 @@
 
 [English](./troubleshooting.md) | 繁體中文
 
+## 安裝與啟動
+
+| 症狀 | 原因 | 修法 |
+|---|---|---|
+| `vite` 或 `nuxt dev` 啟動失敗，或停在 bundling，log 有 `DTK0014 Error setting up plugin vite:devtools:builtin … Cannot read properties of undefined (reading '_applyOptions')` | 裝了兩個版本的 `devframe`（`pnpm why devframe` 列出不只一個）。orpc-inspector 0.1.3 以前把 devframe 鎖在 1.3.x | 把 orpc-inspector 升到 0.1.4 以上，再執行 `pnpm dedupe` |
+| npm + Nuxt：`npm i -D orpc-inspector @nuxt/devtools@4 …` 出現 `ERESOLVE` 而中止 | Nuxt 已經裝了 Nuxt DevTools v3，npm 無法原地換掉 | 在 `package.json` 的 `devDependencies` 加上 `orpc-inspector`、`@nuxt/devtools`（`^4.0.0`）與 `@nuxt/kit`（`^4.6.0`），刪掉 `node_modules` 與 `package-lock.json`，再執行 `npm install` |
+
 ## 面板打不開
 
 | 症狀 | 原因 | 修法 |

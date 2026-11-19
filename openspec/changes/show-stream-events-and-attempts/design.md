@@ -68,3 +68,29 @@ A new `panel/stream-view.ts` turns a record into the event list to show: each ev
 - [The parallel oRPC v2 work edits `recorder.ts` and `classify-error.ts`] → Keep edits to the catch path, the stream wrapper's end handler, `recordTransport` and the `toPlain` replacer; no moves or renames.
 - [Long streams make the details long] → At most 100 events are kept, and the JSON tree's existing depth rule keeps nested objects inside each event collapsed.
 - [Older records have no `eventsBefore`] → They show no dividers, which is what they show today.
+
+## Review record
+
+External source: the maintainer's task brief in the planning conversation (no linked document). It names the four problems (attempts and events not shown, abort recorded as `error`, `Map` / `Set` recorded as `{}`, reconnects with no boundary), asks the change to decide whether `Map` / `Set` is a bug fix and whether attempts and events go into copied reports, lists batching / dedupe labels, the placeholder URL and Web Workers as follow-ups, and keeps record-time body masking as it is.
+
+Level: normal. Reversibility: mostly reversible (panel layout, report text); two additive irreversible items: the recorded shape of `Map` / `Set`, and the new optional `eventsBefore` field on the exported `OrpcCallAttempt` type. Nothing destructive: existing fields keep their meaning and older records stay valid. Reports gain stream events, which are the stream's counterpart of the response body that reports already include under the same toggle and masking.
+
+| Item | Where | Source or agent | Handling |
+|---|---|---|---|
+| Aborted call recorded as `cancelled` | design: Abort | source | decision point 1 (the details) |
+| Detect abort from `signal.aborted`, not the error name | design: Abort | agent | decision point 1 |
+| Cancelled record keeps no error; events before the abort kept | design: Abort; spec call-recording | agent | decision point 1 |
+| Failure racing an abort is recorded as `cancelled` | design: Risks | agent | decision point 1 |
+| `Map` as entries, `Set` as values | design: Map and Set | agent (source asked for a decision) | decision point 2 |
+| `Map` / `Set` handled as part of this change, not a bug fix | proposal | agent (source asked for a decision) | decision point 3 |
+| Reconnect boundary on the attempt (`eventsBefore`), absolute positions | design: Reconnect marker | agent (boundary itself from source) | decision point 4 |
+| Older records have no marker and show no dividers | design: Risks | agent | implementation |
+| Shared `panel/stream-view.ts` helper | design: Shared stream view | agent | implementation |
+| Attempt list only for more than one attempt, in the Request part | design: Panel layout; spec inspector-panel | agent | decision point 5 |
+| Events part, empty body hidden for streams, copy toggle moves to Events | design: Panel layout; spec inspector-panel | agent | decision point 5 |
+| Long streams make the details long; keep 100 events, no extra cap | design: Risks, Non-Goals | agent | decision point 5 |
+| Attempts line and events in reports, under existing toggles, no new setting | design: Report; spec inspector-panel | agent (source asked for a decision) | decision point 6 |
+| Events masked and trimmed like the response | design: Report | agent (follows existing report masking) | decision point 6 |
+| Per-attempt headers (already recorded) left out of the panel | proposal; design: Non-Goals | agent | decision point 7 |
+| Batching / dedupe labels, placeholder URL, Web Workers left out | proposal | source | follows the source |
+| Keep edits local because of the parallel oRPC v2 work | design: Risks | agent | implementation |

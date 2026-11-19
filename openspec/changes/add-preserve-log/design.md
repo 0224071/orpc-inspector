@@ -70,6 +70,8 @@ interface PreservedLog {
 
 The toggle has its own key because a failed write may need to remove the records key, and that must not turn the toggle off.
 
+Confirmed by the maintainer in review.
+
 ### Toggle: toolbar, off by default, remembered per tab
 
 - A "Preserve log" checkbox in the toolbar next to Clear, where the Network tab has it. It isn't in Settings: it changes what happens on the next navigation, so it must be visible while reproducing a bug.
@@ -79,6 +81,8 @@ The toggle has its own key because a failed write may need to remove the records
   - Per tab means it survives exactly the reloads and navigations it exists for. A forgotten toggle doesn't keep writing request data into every new tab.
 - The panel learns the state from a new shared state, `preserveLog`, and changes it through a new action, `preserveLog:set`.
 - Turning it off removes both keys at once. Records already in the list stay until cleared or the page is reloaded.
+
+Confirmed by the maintainer in review.
 
 ### Saving: changed records only, at most once a second, flushed on `pagehide`
 
@@ -97,6 +101,8 @@ The toggle has its own key because a failed write may need to remove the records
 
 `dropped` is cumulative across pages: a restored envelope's `dropped` is carried into the new page and added to what its own saves leave out, so "Partially preserved" stays visible after a reload until the user clears. Records pushed out by the store's 300-record limit are not counted; that limit applies with or without Preserve log.
 
+Confirmed by the maintainer in review.
+
 ### Masking: headers as for SSR records, bodies as they are
 
 The saved form replaces, with `***`, values of headers whose names match the default sensitive pattern. This covers top-level request and response headers, each attempt's headers, and headers inside error data. These are the rules SSR records and opted-in production records follow at record time (`isSensitiveKey`, `maskDataHeaders`).
@@ -105,6 +111,8 @@ The saved form replaces, with `***`, values of headers whose names match the def
 - Restored values that are `***` have no reveal control, as for SSR records.
 - Bodies (`input`, `output`, `events`, error data other than headers) are saved unmasked. This keeps today's rule (bodies are masked only in copied reports, with the template's pattern) and was decided by the maintainer.
 - The guide states the consequence plainly. Tokens or personal data in bodies, such as a login response's `accessToken`, sit in the tab's sessionStorage until the toggle is turned off, the log is cleared or the tab is closed. Any script on the origin, and anyone with DevTools on that machine, can read them.
+
+Confirmed by the maintainer in review.
 
 ### Restore: once per document load
 
@@ -122,9 +130,13 @@ Only one load restores. `pageshow` with `persisted === true` (a return from the 
 - The toggle: if it was turned off on a later page, this page stops saving.
 - `clearedAt`: if the log was cleared after this page was hidden, this page's store is cleared too, because every record in it predates that clear.
 
+Confirmed by the maintainer in review.
+
 ### Order and de-duplication with SSR
 
 Records restored from earlier documents are older than anything the new document made, so they go last. Within them the saved order is kept. The `Merge on the client` order for SSR records is unchanged: the store reads client calls of this page, then SSR records of this page, then previous pages' records. SSR records saved on an earlier page come back with side `ssr` and the previous-page mark.
+
+Confirmed by the maintainer in review.
 
 ### `unknown` state
 
@@ -143,6 +155,8 @@ So `OrpcCallState` gains `unknown`:
 
 Only restore sets it; the recorder never does.
 
+Confirmed by the maintainer in review.
+
 ### Marking records from a previous page
 
 - `OrpcCall.fromPreviousPage?: true` is set at restore and kept through later saves, so a record two navigations back is still marked.
@@ -151,6 +165,8 @@ Only restore sets it; the recorder never does.
 - Copied reports are in English. The request line's marker reads `(client · from a previous page)`, next to the existing `client` / `SSR` and `not sent` markers, under the Request section toggle. The errors report shows the same marker.
 - The errors report's duplicate grouping key includes the mark, so an error from the previous page and the same error on this page are listed separately rather than merged under one of them.
 - `notPreserved` fields read `(not preserved: 120 KB, over the 64 KB limit)` in the details and in reports, in place of the body, events or error data.
+
+Confirmed by the maintainer in review.
 
 ### Status in the toolbar
 
@@ -163,20 +179,29 @@ The `preserveLog` shared state is `{ enabled, available, dropped, summarized, fa
 
 The state is published like `calls`, separately from it, so record patches stay as #11 made them.
 
+Confirmed by the maintainer in review.
+
+### Opted-in production builds
+
+Preserve log works the same in builds that include the inspector through the `production` option: off by default, remembered per tab. Headers in those records are already masked at record time; bodies are saved as they are, as on the dev server. The guide says so.
+
+Confirmed by the maintainer in review.
+
 ## Risks / Trade-offs
 
 - [Request data in sessionStorage] → Off by default, remembered per tab only, headers masked. The rest is documented, and turning it off or clearing deletes the copy at once.
 - [The app's own sessionStorage use plus the 2 M budget can exceed the quota] → The app's writes come first in practice (ours are deferred), our writes fail safely, and the toolbar says so. The budget may need lowering if users report it.
 - [A page restored from the back/forward cache saves its own store and replaces records made on the page the user came back from] → Restoring on `pageshow` was ruled out. Its records are the page's own, and a return is the user's own navigation. Documented in the guide.
-- [Two apps on one origin in the same tab restore each other's records] → Rare in dev. Documented. A per-app key needs an app id the page script doesn't have today.
+- [Two apps on one origin in the same tab restore each other's records] → Rare in dev. Documented. A per-app key needs an app id the page script doesn't have today. Confirmed by the maintainer in review: no separation, documented only.
 - [`unknown` is a new member of an exported union] → Additive; code with an exhaustive switch over `OrpcCallState` gains a case. Called out in the release notes.
 - [Up to one second of changes can be lost if the tab crashes] → A navigation or reload flushes on `pagehide`. A crash is not the case this feature serves.
 - [Saving costs main-thread time on large stores] → Changed-records-only serialization, at most one write a second, the 2 M budget and the 30 ms benchmark gate.
 
 ## Open Questions
 
-- #2 and #5 together with this change, or later: see proposal.md. Recommended: later, relying on the no-whitelist save rule.
-- If the benchmark gate fails, whether summaries-for-all should be the default or a second toggle ("Preserve bodies") is needed. Decide only if the gate fails.
+- If the benchmark gate fails, whether summaries-for-all should be the default or a second toggle ("Preserve bodies") is needed. The maintainer chose to decide only if the gate fails.
+
+Resolved: #2 and #5 come later as their own change (confirmed by the maintainer in review). They are not in this change's scope; the no-whitelist save rule keeps the saved format unchanged when they land.
 
 ## Review record
 
@@ -184,7 +209,7 @@ External sources: the maintainer's task brief in the planning conversation (no l
 
 Level: high risk. Additive irreversible items touch security: request data, including unmasked bodies, is written to the tab's sessionStorage. The exported `OrpcCallState` gains `unknown`, and `OrpcCall` gains two optional fields. Reversible: the panel layout, wording, limits and storage format (a saved copy lives only in one tab and is discarded on a version change).
 
-Decision points are numbered as on the review page.
+Decision points are numbered as on the review page. All twelve were confirmed by the maintainer in review as suggested.
 
 | Item | Where | Source or agent | Handling |
 |---|---|---|---|
@@ -193,30 +218,30 @@ Decision points are numbered as on the review page.
 | Page script owns saving and restoring, not the panel | design: Owner | source (issue #3 alternatives) | implementation |
 | Versioned envelope, discarded on mismatch | design: Storage keys and envelope | source | follows the source |
 | Two keys (toggle, records); `v` bumped only for incompatible changes | design: Storage keys and envelope | agent | implementation |
-| Saved copy keeps every record field, no whitelist | design: Storage keys and envelope | agent | decision point 6 |
-| Toggle in the toolbar, off by default, remembered per tab | design: Toggle | agent (the source asked for a decision; off by default from issue #3) | decision point 1 |
-| Turning on saves current records; turning off deletes the copy | design: Toggle | source (issue #3) and agent | decision point 1 |
+| Saved copy keeps every record field, no whitelist | design: Storage keys and envelope | agent | decision point 6, confirmed |
+| Toggle in the toolbar, off by default, remembered per tab | design: Toggle | agent (the source asked for a decision; off by default from issue #3) | decision point 1, confirmed |
+| Turning on saves current records; turning off deletes the copy | design: Toggle | source (issue #3) and agent | decision point 1, confirmed |
 | Save at most once a second, flush on `pagehide` and `visibilitychange` | design: Saving | source (continuous saving plus a flush on leaving, issue #3); interval agent | implementation |
 | Per-record cache of the saved form | design: Saving | agent | implementation |
 | 64 KB per-record summary and which fields it keeps | design: Size | source (limit); agent (fields) | implementation |
-| 2,000,000-character total budget, newest first, dropped count | design: Size | agent | decision point 2 |
-| Quota fallback: summaries only, then remove the stale copy | design: Size | agent (no silent staleness from the pre-mortem) | decision point 2 |
+| 2,000,000-character total budget, newest first, dropped count | design: Size | agent | decision point 2, confirmed |
+| Quota fallback: summaries only, then remove the stale copy | design: Size | agent (no silent staleness from the pre-mortem) | decision point 2, confirmed |
 | 30 ms benchmark gate | design: Size | source | follows the source |
-| What to do if the gate fails | design: Open Questions | agent | decision point 11 |
+| What to do if the gate fails | design: Open Questions | agent | decision point 11, confirmed |
 | Headers masked like SSR records; bodies unmasked | design: Masking | source | follows the source |
-| Default sensitive pattern, not the template's | design: Masking | agent | decision point 5 |
+| Default sensitive pattern, not the template's | design: Masking | agent | decision point 5, confirmed |
 | Restore once at load; none on `pageshow` | design: Restore | source | follows the source |
-| Re-read the toggle and `clearedAt` on `pageshow` | design: Restore | agent | decision point 7 |
-| Restored records after the new page's SSR records, de-duplicated by id | design: Order | agent (the source asked for a decision) | decision point 4 |
-| New `unknown` state for unfinished calls | design: `unknown` state | agent ("outcome unknown" from the source) | decision point 3 |
-| Previous-page tag and notes, report marker wording, errors report grouping | design: Marking | source (marker); agent (wording, grouping) | decision point 8 |
-| Toolbar status: "Partially preserved", "Not preserved", unavailable | design: Status | source ("Partially preserved"); agent (others) | decision point 2 |
+| Re-read the toggle and `clearedAt` on `pageshow` | design: Restore | agent | decision point 7, confirmed |
+| Restored records after the new page's SSR records, de-duplicated by id | design: Order | agent (the source asked for a decision) | decision point 4, confirmed |
+| New `unknown` state for unfinished calls | design: `unknown` state | agent ("outcome unknown" from the source) | decision point 3, confirmed |
+| Previous-page tag and notes, report marker wording, errors report grouping | design: Marking | source (marker); agent (wording, grouping) | decision point 8, confirmed |
+| Toolbar status: "Partially preserved", "Not preserved", unavailable | design: Status | source ("Partially preserved"); agent (others) | decision point 2, confirmed |
 | Risk: request data in sessionStorage | design: Risks | source (pre-mortem) | documented in the guide |
-| Risk: app and budget together exceed the quota | design: Risks | agent | decision point 2 |
-| Risk: a page back from the back/forward cache overwrites later records | design: Risks | agent | decision point 7 |
-| Risk: two apps on one origin share the copy | design: Risks | agent | decision point 12 |
-| Risk: `unknown` added to an exported union | design: Risks | agent | decision point 3 |
+| Risk: app and budget together exceed the quota | design: Risks | agent | decision point 2, confirmed |
+| Risk: a page back from the back/forward cache overwrites later records | design: Risks | agent | decision point 7, confirmed |
+| Risk: two apps on one origin share the copy | design: Risks | agent | decision point 12, confirmed |
+| Risk: `unknown` added to an exported union | design: Risks | agent | decision point 3, confirmed |
 | Risk: up to a second lost on a crash | design: Risks | agent | implementation |
 | Risk: main-thread cost on large stores | design: Risks | source (gate) | implementation |
-| Opted-in production builds get Preserve log too (not stated in the specs) | specs: none | agent (gap) | decision point 9 |
-| #2 / #5 together or later | proposal: Open question | source (asked to be listed) | decision point 10 |
+| Opted-in production builds get Preserve log too (not stated in the specs) | design: Opted-in production builds | agent (gap) | decision point 9, confirmed |
+| #2 / #5 together or later | proposal: Open question | source (asked to be listed) | decision point 10, confirmed |

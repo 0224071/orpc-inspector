@@ -21,6 +21,10 @@ The system SHALL provide a Preserve log setting that is off by default. The page
 - **WHEN** Preserve log is on with 5 saved records, the user turns it off and reloads the page
 - **THEN** no record is restored and nothing of the saved copy is left in sessionStorage
 
+#### Scenario: Opted-in production build
+- **WHEN** an app built with `orpcInspector({ production: true })` is opened in a new tab
+- **THEN** Preserve log is off, and once it is turned on, records are saved and restored as on the dev server
+
 ### Requirement: Save the store while Preserve log is on
 While Preserve log is on, the page script SHALL save a copy of the store to sessionStorage within one second after the store changes, at most once per second, and SHALL save once more synchronously when the page is hidden (`pagehide` or `visibilitychange` to `hidden`). Saving SHALL NOT throw into the app, delay a call's result or change what calls return or throw.
 

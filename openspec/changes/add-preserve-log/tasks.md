@@ -3,7 +3,7 @@
 ## 1. Before implementation
 
 - [ ] 1.1 Wait until PR #11 and PR #13 are merged, then rebase this branch on `main`; verify that the published state is still `{ calls, order }`, that `cancelled`, `attempts[].eventsBefore` and the events view are in place, and update design.md where the merged code differs
-- [ ] 1.2 Get the maintainer's decision on the open question (#2 / #5 together or later) and record it in proposal.md; verify the scope sections of proposal.md and design.md match the decision
+- [x] 1.2 Get the maintainer's decision on the open question (#2 / #5 together or later) and record it in proposal.md; verify the scope sections of proposal.md and design.md match the decision
 - [ ] 1.3 Benchmark gate: in Chromium, time one save (fit to limits, mask, stringify, `setItem`) for a store of about 5 MB of records (300 × ~16 KB; 295 typical + 5 × 1 MB); record the numbers in design.md. If any save takes over 30 ms, stop: make summaries the default for every record in design.md and the specs, and get the maintainer's confirmation before continuing
 
 ## 2. Types and store
@@ -32,5 +32,5 @@
 
 ## 6. Docs and checks
 
-- [ ] 6.1 Add `docs/guide/preserve-log.md` and `docs/guide/preserve-log.zh-TW.md`. Cover: how to turn it on, what is restored and how it is marked, the `unknown` state, the size limits and the status note, the back/forward cache behavior, apps sharing an origin, and a security section on what is saved to sessionStorage (masked headers, unmasked bodies, who can read it, how to delete it, the default pattern). Link the guide from the README feature list and guide links in both languages; verify both languages say the same thing
+- [ ] 6.1 Add `docs/guide/preserve-log.md` and `docs/guide/preserve-log.zh-TW.md`. Cover: how to turn it on, what is restored and how it is marked, the `unknown` state, the size limits and the status note, the back/forward cache behavior, apps sharing an origin, opted-in production builds, and a security section on what is saved to sessionStorage (masked headers, unmasked bodies, who can read it, how to delete it, the default pattern). Link the guide from the README feature list and guide links in both languages; verify both languages say the same thing
 - [ ] 6.2 Run `pnpm check`. Then check in Chromium with the panel open, against a real oRPC 1.16 server: a 401 that redirects to a sign-in page, a reload during a slow call, a stream cut by a navigation, Back from the back/forward cache, an HMR update, clear then reload, and 5 × 1 MB responses (status note). Run `pnpm smoke --pm pnpm --app vite` and `--app nuxt`; verify the store, the saved copy and the panel match the specs

@@ -20,6 +20,7 @@ Records live in the page's memory, so a full reload or a document navigation emp
   - calls that were `pending` or `streaming` when the page was left get a new state, `unknown` ("Outcome unknown" / "結果未知"); events received before leaving are kept.
 - Clear empties the saved copy too, so cleared records never come back after a reload. A page restored from the back/forward cache drops its records when the log was cleared on a later page.
 - Turning the toggle off deletes the saved copy; the next load restores nothing.
+- Builds that include the inspector through the `production` option get the same toggle, also off by default.
 - The saved copy masks the same headers as SSR records (request, response and per-attempt headers whose names match the default sensitive pattern, and headers inside error data). Bodies are saved as they are, as they are in memory today. The docs gain a Preserve log guide in English and Traditional Chinese, including what ends up in sessionStorage and who can read it.
 
 Out of scope:
@@ -44,7 +45,9 @@ Out of scope:
 | Scope and review | Larger change: #5 needs a way to name clients, which has nothing to do with navigation | Two focused changes |
 | Risk | This change waits on the design of #5 | Low. The save rule above is the only forward-compatibility guarantee needed |
 
-Recommendation: add them later, as their own change. The forward-compatible save rule removes the format cost, and the remaining cost is one report wording change. #2 and #5 are not in this change's scope. **The maintainer decides before implementation starts.**
+Recommendation: add them later, as their own change. The forward-compatible save rule removes the format cost, and the remaining cost is one report wording change. #2 and #5 are not in this change's scope.
+
+Decision: confirmed by the maintainer in review. #2 and #5 come later as their own change.
 
 ## Capabilities
 

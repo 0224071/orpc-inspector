@@ -19,7 +19,7 @@
 
 ## 4. Integrations
 
-- [ ] 4.1 Redirect `orpc-inspector/v2` to the real recorder in the Vite plugin (production opt-in and dev SSR); verify plugin unit tests for both ids and that `orpc-inspector/client` is untouched
+- [x] 4.1 Redirect `orpc-inspector/v2` to the real recorder in the Vite plugin (production opt-in and dev SSR); verify plugin unit tests for both ids and that `orpc-inspector/client` is untouched
 - [ ] 4.2 Nuxt: detect the `@orpc/client` major, add `runtime/composables.v2.ts` and `runtime/noop.v2.ts`, make the no-op template return options with a name; verify `test/nuxt/module.test.ts` covers v1, v2 and unresolvable cases
 
 ## 5. Docs

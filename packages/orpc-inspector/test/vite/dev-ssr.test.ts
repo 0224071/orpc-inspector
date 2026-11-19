@@ -129,6 +129,12 @@ describe('vite dev server SSR entry', () => {
     expect(posix(report.browserRoot)).toContain('/.vite/deps/orpc-inspector.js')
   }, TIMEOUT)
 
+  it('gives orpc-inspector/v2 the real v2 recorder too', async () => {
+    const report = await runScenario('v2')
+    expectRecords(report)
+    expect(report.externalConditions).toEqual(['node', 'module-sync'])
+  }, TIMEOUT)
+
   it.each([
     ['noExternal: true', 'no-external-true'],
     ['noExternal regex list', 'no-external-regex'],

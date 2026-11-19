@@ -180,21 +180,43 @@ The state is published like `calls`, separately from it, so record patches stay 
 
 ## Review record
 
-External source: the maintainer's task brief in the planning conversation (no linked document), issue #3, and the maintainer's planning notes (experiments E4 and E5, dependency graph, pre-mortem; not in the repo).
+External sources: the maintainer's task brief in the planning conversation (no linked document); issue #3; the maintainer's planning notes (experiments E4 and E5, dependency graph, pre-mortem; not in the repo). All were read.
 
-| Item | Where | Source or agent |
-|---|---|---|
-| Bug reports as the main use; restored records reach reports with a marker | proposal; design: Marking | source |
-| Browser side only, panel in the Vite DevTools dock, no server recording | proposal: Out of scope | source |
-| Body masking unchanged, headers masked in the saved copy | design: Masking | source |
-| Versioned envelope, discard on mismatch | design: Storage keys and envelope | source |
-| 64 KB per-record summary, "Partially preserved", 30 ms gate | design: Size | source (numbers), agent (fill order, summary fields) |
-| 2,000,000-character total budget, quota fallback that removes the stale copy | design: Size | agent |
-| Restore once at load; none on `pageshow` | design: Restore | source |
-| Re-read toggle and `clearedAt` on `pageshow` | design: Restore | agent |
-| Unfinished calls get a new `unknown` state | design: `unknown` state | agent (the "outcome unknown" requirement is from the source) |
-| Clear removes the saved copy | design: Saving; spec preserve-log | source |
-| Toggle in the toolbar, off by default, remembered per tab in sessionStorage | design: Toggle | agent (the source asked for a decision) |
-| Restored records go after SSR records, de-duplicated by id | design: Order | agent (the source asked for a decision) |
-| Saved copy keeps every record field (no whitelist) | design: Storage keys and envelope | agent |
-| #2 / #5 compared, not in scope, left to the maintainer | proposal: Open question | source |
+Level: high risk. Additive irreversible items touch security: request data, including unmasked bodies, is written to the tab's sessionStorage. The exported `OrpcCallState` gains `unknown`, and `OrpcCall` gains two optional fields. Reversible: the panel layout, wording, limits and storage format (a saved copy lives only in one tab and is discarded on a version change).
+
+Decision points are numbered as on the review page.
+
+| Item | Where | Source or agent | Handling |
+|---|---|---|---|
+| Bug reports as the main use; restored records reach reports | proposal: Why | source | follows the source |
+| Browser side only, dock panel, no server recording; no cross-tab, history or cross-origin | proposal: Out of scope | source (issue #3, brief) | follows the source |
+| Page script owns saving and restoring, not the panel | design: Owner | source (issue #3 alternatives) | implementation |
+| Versioned envelope, discarded on mismatch | design: Storage keys and envelope | source | follows the source |
+| Two keys (toggle, records); `v` bumped only for incompatible changes | design: Storage keys and envelope | agent | implementation |
+| Saved copy keeps every record field, no whitelist | design: Storage keys and envelope | agent | decision point 6 |
+| Toggle in the toolbar, off by default, remembered per tab | design: Toggle | agent (the source asked for a decision; off by default from issue #3) | decision point 1 |
+| Turning on saves current records; turning off deletes the copy | design: Toggle | source (issue #3) and agent | decision point 1 |
+| Save at most once a second, flush on `pagehide` and `visibilitychange` | design: Saving | source (continuous saving plus a flush on leaving, issue #3); interval agent | implementation |
+| Per-record cache of the saved form | design: Saving | agent | implementation |
+| 64 KB per-record summary and which fields it keeps | design: Size | source (limit); agent (fields) | implementation |
+| 2,000,000-character total budget, newest first, dropped count | design: Size | agent | decision point 2 |
+| Quota fallback: summaries only, then remove the stale copy | design: Size | agent (no silent staleness from the pre-mortem) | decision point 2 |
+| 30 ms benchmark gate | design: Size | source | follows the source |
+| What to do if the gate fails | design: Open Questions | agent | decision point 11 |
+| Headers masked like SSR records; bodies unmasked | design: Masking | source | follows the source |
+| Default sensitive pattern, not the template's | design: Masking | agent | decision point 5 |
+| Restore once at load; none on `pageshow` | design: Restore | source | follows the source |
+| Re-read the toggle and `clearedAt` on `pageshow` | design: Restore | agent | decision point 7 |
+| Restored records after the new page's SSR records, de-duplicated by id | design: Order | agent (the source asked for a decision) | decision point 4 |
+| New `unknown` state for unfinished calls | design: `unknown` state | agent ("outcome unknown" from the source) | decision point 3 |
+| Previous-page tag and notes, report marker wording, errors report grouping | design: Marking | source (marker); agent (wording, grouping) | decision point 8 |
+| Toolbar status: "Partially preserved", "Not preserved", unavailable | design: Status | source ("Partially preserved"); agent (others) | decision point 2 |
+| Risk: request data in sessionStorage | design: Risks | source (pre-mortem) | documented in the guide |
+| Risk: app and budget together exceed the quota | design: Risks | agent | decision point 2 |
+| Risk: a page back from the back/forward cache overwrites later records | design: Risks | agent | decision point 7 |
+| Risk: two apps on one origin share the copy | design: Risks | agent | decision point 12 |
+| Risk: `unknown` added to an exported union | design: Risks | agent | decision point 3 |
+| Risk: up to a second lost on a crash | design: Risks | agent | implementation |
+| Risk: main-thread cost on large stores | design: Risks | source (gate) | implementation |
+| Opted-in production builds get Preserve log too (not stated in the specs) | specs: none | agent (gap) | decision point 9 |
+| #2 / #5 together or later | proposal: Open question | source (asked to be listed) | decision point 10 |

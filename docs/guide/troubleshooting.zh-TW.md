@@ -23,6 +23,8 @@
 | 症狀 | 原因 | 修法 |
 |---|---|---|
 | 完全沒有呼叫 | link 上沒有 `OrpcInspectorPlugin` | 加進 link 的 `plugins`（[Vite](../../README.zh-TW.md#vitevuereact其他框架)、[Nuxt](../../README.zh-TW.md#nuxt)） |
+| 建立 link 時拋出 `Cannot read properties of undefined (reading 'interceptors')` | 用 oRPC 2.0 beta，卻從 1.x 的 `orpc-inspector` 匯入 plugin | 改從 `orpc-inspector/v2` 匯入（[oRPC v2](./link.zh-TW.md#orpc-v2beta)） |
+| Nuxt 搭 oRPC 2.0 beta：同樣的錯誤，或 `plugins` 型別錯誤 | 模組從專案根目錄讀 `@orpc/client` 版本，讀到 1.x 或找不到（例如只裝在 layer） | 在 app 裝 `@orpc/client` 2.x，或自己從 `orpc-inspector/v2` 匯入 `OrpcInspectorPlugin` |
 | 手刻 SSR server 沒有 SSR 呼叫 | server 用一般 `node` 在 Vite 外 import `orpc-inspector`，拿到 no-op；或 `ssr.external` 讓它維持 external | 讓 SSR 入口經 Vite 載入且設定裡有 `orpcInspector()`，或改用 `node --conditions=development`（[SSR](./ssr.zh-TW.md#補充)） |
 | Nuxt 沒有 SSR 呼叫 | link 只建一次、跨 request 共用 | 在 Nuxt plugin 或 `setup` 內建立 link，每個 request 一個 |
 | 看不到 batch 請求 | 用了 `BatchLinkPlugin` | 正常：面板顯示各個 procedure 的請求，不是合併後的 batch |

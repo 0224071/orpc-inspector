@@ -6,9 +6,14 @@ import { createServer } from 'vite'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 const scenario = process.argv[2]
+/** The v2 scenario loads the same app built on oRPC v2 and `orpc-inspector/v2` */
+const entry = scenario === 'v2'
+  ? '/entry-server-v2.ts'
+  : '/entry-server.ts'
 
 const userSsr = {
   'default': undefined,
+  'v2': undefined,
   'no-plugin': undefined,
   'no-external-true': { noExternal: true },
   'no-external-regex': {
@@ -39,8 +44,8 @@ async function main() {
   })
 
   try {
-    const render = async marker => (await server.ssrLoadModule('/entry-server.ts')).render(marker)
-    const importer = fileURLToPath(new URL('./entry-server.ts', import.meta.url))
+    const render = async marker => (await server.ssrLoadModule(entry)).render(marker)
+    const importer = fileURLToPath(new URL(`.${entry}`, import.meta.url))
     const report = {
       single: await render('a'),
       concurrent: await Promise.all([

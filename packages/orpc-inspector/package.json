@@ -29,6 +29,11 @@
       "development": "./dist/index.js",
       "default": "./dist/index.prod.js"
     },
+    "./v2": {
+      "types": "./dist/v2.d.ts",
+      "development": "./dist/v2.js",
+      "default": "./dist/v2.prod.js"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
@@ -56,8 +61,8 @@
   },
   "peerDependencies": {
     "@nuxt/kit": "^4.6.0",
-    "@orpc/client": "^1.16.0",
-    "@orpc/contract": "^1.16.0",
+    "@orpc/client": "^1.16.0 || ^2.0.0-beta.51",
+    "@orpc/contract": "^1.16.0 || ^2.0.0-beta.51",
     "@vitejs/devtools": "^0.8.0",
     "nuxt": "^4.6.0",
     "vite": ">=8.3.0"
@@ -84,10 +89,14 @@
     "@nuxt/kit": "~4.6.4",
     "@nuxt/schema": "~4.6.4",
     "@orpc/client": "^1.16.2",
+    "@orpc/client-v2": "npm:@orpc/client@2.0.0-beta.51",
     "@orpc/contract": "^1.16.2",
+    "@orpc/contract-v2": "npm:@orpc/contract@2.0.0-beta.51",
     "@orpc/openapi": "^1.16.2",
     "@orpc/openapi-client": "^1.16.2",
+    "@orpc/openapi-v2": "npm:@orpc/openapi@2.0.0-beta.51",
     "@orpc/server": "^1.16.2",
+    "@orpc/server-v2": "npm:@orpc/server@2.0.0-beta.51",
     "@tailwindcss/vite": "^4.3.5",
     "@vitejs/devtools": "^0.8.2",
     "@vitejs/plugin-vue": "^6.0.10",

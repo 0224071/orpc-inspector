@@ -31,7 +31,8 @@ interface RecordableOptions {
 
 interface TransportableOptions {
   context: object
-  request: { method: string, url: URL, headers: StandardHeaders }
+  /** v1 passes a URL; v2 a string, possibly a path without origin */
+  request: { method: string, url: URL | string, headers: StandardHeaders }
 }
 
 /** Same shape as oRPC's InterceptorOptions so the core doesn't import oRPC plugin types */
@@ -162,7 +163,7 @@ export function createCallRecorder(sink: CallSinkSource) {
     const mask = call?.side === 'ssr' || isRecordMaskEnabled()
     const attempt: OrpcCallAttempt = {
       method: options.request.method,
-      url: options.request.url.toString(),
+      url: String(options.request.url),
       requestHeaders: toHeaderRecord(options.request.headers, mask),
     }
     // Top-level fields reflect the last attempt; a previous status must not linger

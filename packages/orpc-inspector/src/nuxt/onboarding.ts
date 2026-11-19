@@ -14,8 +14,13 @@ export function isNuxtDevToolsEnabled(devtools: unknown) {
 
 /** Version of the project's `@nuxt/devtools`, found by walking node_modules up from rootDir (the copy Nuxt loads) */
 export function readNuxtDevToolsVersion(rootDir: string): string | undefined {
+  return readInstalledVersion(rootDir, '@nuxt/devtools')
+}
+
+/** Version of a package as Node would find it from rootDir (walking up node_modules), without resolving its exports */
+export function readInstalledVersion(rootDir: string, name: string): string | undefined {
   for (let dir = rootDir; ; dir = dirname(dir)) {
-    const pkg = join(dir, 'node_modules', '@nuxt', 'devtools', 'package.json')
+    const pkg = join(dir, 'node_modules', ...name.split('/'), 'package.json')
     if (existsSync(pkg)) {
       try {
         return (JSON.parse(readFileSync(pkg, 'utf8')) as { version?: string }).version
@@ -27,6 +32,13 @@ export function readNuxtDevToolsVersion(rootDir: string): string | undefined {
     if (dirname(dir) === dir)
       return undefined
   }
+}
+
+/** Which link plugin `useOrpcInspectorPlugin()` returns: v2 for an oRPC 2 `@orpc/client`, v1 otherwise (including not found) */
+export function orpcLinkMajor(version: string | undefined): 1 | 2 {
+  return version?.split('.')[0] === '2'
+    ? 2
+    : 1
 }
 
 /**

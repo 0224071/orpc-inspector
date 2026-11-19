@@ -1,12 +1,13 @@
 import type { createPluginFromDevframe } from '@vitejs/devtools-kit/node'
 import type { Plugin } from 'vite'
+import type { RecorderEntry } from './recorder-entry'
 import { normalize, resolve } from 'node:path'
 import process from 'node:process'
 import { ORPC_INSPECTOR_PANEL_ROUTE } from '../core/types'
 import { inspectorDevtools } from './devframe'
 import { DEVTOOLS_SERVER_PLUGIN, devToolsMissingWarning, isDevToolsOptionEnabled, startupLine } from './onboarding'
 import { copyPanel, defaultPanelDir, panelMiddleware } from './panel-files'
-import { keptExternal, PACKAGE_NAME, recorderModule } from './recorder-entry'
+import { keptExternal, PACKAGE_NAME, recorderEntryOf, recorderModule } from './recorder-entry'
 import { resolveZodLocale, translatorModule, zodOptimizeDeps } from './zod-locale'
 
 export const CLIENT_MODULE_ID = 'virtual:orpc-inspector/client'
@@ -15,7 +16,15 @@ export const TRANSLATOR_MODULE_ID = 'virtual:orpc-inspector/issue-translator'
 const RESOLVED_TRANSLATOR_MODULE_ID = `\0${TRANSLATOR_MODULE_ID}`
 export const RECORDER_MODULE_ID = 'virtual:orpc-inspector/recorder'
 const RESOLVED_RECORDER_MODULE_ID = `\0${RECORDER_MODULE_ID}`
-const RESOLVED_SSR_RECORDER_MODULE_ID = `\0${RECORDER_MODULE_ID}?ssr`
+/** `\0virtual:orpc-inspector/recorder[/v2][?ssr]`: the root (oRPC 1.x) or v2 entry, for the browser or SSR */
+const RECORDER_MODULE_PATTERN = /^\0virtual:orpc-inspector\/recorder(\/v2)?(\?ssr)?$/
+
+function resolvedRecorderId(entry: RecorderEntry, ssr: boolean) {
+  const suffix = entry === 'v2'
+    ? '/v2'
+    : ''
+  return `${RESOLVED_RECORDER_MODULE_ID}${suffix}${ssr ? '?ssr' : ''}`
+}
 
 /** Plugins Vite DevTools (@vitejs/devtools 0.8) keeps in a build when `build.withApp` / `build.injection` are on */
 export const DEVTOOLS_BUILD_PLUGIN = 'vite:devtools:build'
@@ -127,7 +136,7 @@ export function createOrpcInspectorPlugin(options: InternalPluginOptions = {}): 
         config.logger.warn(`[orpc-inspector] Vite DevTools build.injection is off, so the dock is not injected into the app; load ${base}__devtools/embedded.js yourself`)
     },
     resolveId: {
-      // Before Vite's resolver, so the bare package id (otherwise the no-op, or externalized in SSR) gets the real recorder:
+      // Before Vite's resolver, so the bare root and /v2 ids (otherwise the no-op, or externalized in SSR) get the real recorder:
       // in builds with production, and in the dev server's SSR entry
       order: 'pre',
       handler(id, _importer, resolveOptions) {
@@ -135,21 +144,22 @@ export function createOrpcInspectorPlugin(options: InternalPluginOptions = {}): 
           return RESOLVED_CLIENT_MODULE_ID
         if (id === TRANSLATOR_MODULE_ID && localeSpecifier)
           return RESOLVED_TRANSLATOR_MODULE_ID
-        if (id !== PACKAGE_NAME)
+        const entry = recorderEntryOf(id)
+        if (!entry)
           return
-        if (building) {
-          return resolveOptions?.ssr
-            ? RESOLVED_SSR_RECORDER_MODULE_ID
-            : RESOLVED_RECORDER_MODULE_ID
-        }
+        if (building)
+          return resolvedRecorderId(entry, !!resolveOptions?.ssr)
         const environment = this.environment
         if (environment?.config.command === 'serve' && environment.name === 'ssr' && !options.nuxt && !keptExternal(environment.config.resolve.external))
-          return RESOLVED_SSR_RECORDER_MODULE_ID
+          return resolvedRecorderId(entry, true)
       },
     },
     load(id) {
-      if (id === RESOLVED_RECORDER_MODULE_ID || id === RESOLVED_SSR_RECORDER_MODULE_ID) {
-        return recorderModule(id === RESOLVED_SSR_RECORDER_MODULE_ID)
+      const recorder = RECORDER_MODULE_PATTERN.exec(id)
+      if (recorder) {
+        return recorderModule(!!recorder[2], recorder[1]
+          ? 'v2'
+          : 'index')
       }
       if (id === RESOLVED_CLIENT_MODULE_ID) {
         return localeSpecifier

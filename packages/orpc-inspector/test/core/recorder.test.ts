@@ -125,6 +125,25 @@ describe('createCallRecorder', () => {
     expect(sink.commits.at(-1)!.call.requestHeaders).not.toHaveProperty('x-none')
   })
 
+  it('records a string request url as is (oRPC v2 passes a path)', async () => {
+    const sink = createSink()
+    const { record, recordTransport } = createCallRecorder(sink)
+    await record({
+      ...base,
+      next: options => recordTransport({
+        context: options!.context,
+        request: { method: 'POST', url: '/rpc/profile/get', headers: {} },
+        next: async () => ({ status: 200, headers: {} }),
+      }),
+    })
+    expect(sink.commits.at(-1)!.call).toMatchObject({
+      url: '/rpc/profile/get',
+      attempts: [
+        { url: '/rpc/profile/get', status: 200 },
+      ],
+    })
+  })
+
   it('passes a shallow-copied context down without mutating the user object', async () => {
     const context = { user: 'ann' }
     const { record } = createCallRecorder(createSink())

@@ -1,5 +1,15 @@
+import type { ClientContext } from '@orpc/client'
+import type { StandardLinkPlugin as StandardLinkPluginV2 } from '@orpc/client-v2/standard'
+import type { StandardLinkPlugin } from '@orpc/client/standard'
 import type { OrpcInspectorModuleOptions } from '../../src/nuxt/module'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createORPCClient } from '@orpc/client'
+import { createORPCClient as createORPCClientV2 } from '@orpc/client-v2'
+import { RPCLink as RPCLinkV2 } from '@orpc/client-v2/fetch'
+import { RPCLink } from '@orpc/client/fetch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The kit helpers only record what the module asks for; defineNuxtModule returns the definition so setup can be called directly
@@ -37,13 +47,13 @@ const devtoolsEntry = fileURLToPath(import.meta.resolve('@vitejs/devtools'))
 
 type Hook = (...args: any[]) => unknown
 
-function createNuxt({ dev = false, baseURL = '/' } = {}) {
+function createNuxt({ dev = false, baseURL = '/', rootDir = '/project' } = {}) {
   const hooks = new Map<string, Hook[]>()
   return {
     options: {
       dev,
-      rootDir: '/project',
-      buildDir: '/project/.nuxt',
+      rootDir,
+      buildDir: `${rootDir}/.nuxt`,
       app: { baseURL, buildAssetsDir: '/_nuxt/' },
       build: { transpile: [] as string[] },
     },
@@ -176,5 +186,77 @@ describe('nuxt build', () => {
 
     const [inspector] = kit.addVitePlugin.mock.calls[0]! as [{ config: (config: object, env: object) => { ssr?: unknown } }]
     expect(inspector.config({}, { command: 'serve', mode: 'development' }).ssr).toBeUndefined()
+  })
+})
+
+describe('oRPC major', () => {
+  /** A project root whose node_modules holds only @orpc/client at this version */
+  function projectWithOrpc(version: string) {
+    const root = mkdtempSync(join(tmpdir(), 'orpc-inspector-nuxt-'))
+    mkdirSync(join(root, 'node_modules', '@orpc', 'client'), { recursive: true })
+    writeFileSync(join(root, 'node_modules', '@orpc', 'client', 'package.json'), JSON.stringify({ version }))
+    return root
+  }
+
+  const templates = () => Object.fromEntries(kit.addTemplate.mock.calls.map(([template]) => [
+    template.filename,
+    (template as unknown as { getContents: () => string }).getContents(),
+  ]))
+
+  it.each([
+    ['2.0.0-beta.51', '/pkg/runtime/composables.v2'],
+    ['1.16.4', '/pkg/runtime/composables'],
+  ])('dev: @orpc/client %s gets %s', async (version, from) => {
+    await setup({}, createNuxt({
+      dev: true,
+      rootDir: projectWithOrpc(version),
+    }))
+    expect(kit.addImports).toHaveBeenCalledWith({ name: 'useOrpcInspectorPlugin', from })
+  })
+
+  it('dev: falls back to the v1 composable when @orpc/client is not found', async () => {
+    await setup({}, createNuxt({
+      dev: true,
+      rootDir: mkdtempSync(join(tmpdir(), 'orpc-inspector-nuxt-')),
+    }))
+    expect(kit.addImports).toHaveBeenCalledWith({ name: 'useOrpcInspectorPlugin', from: '/pkg/runtime/composables' })
+  })
+
+  it('nuxt build: the no-op types follow the major', async () => {
+    await setup({}, createNuxt({
+      rootDir: projectWithOrpc('2.0.0-beta.51'),
+    }))
+    expect(templates()['orpc-link-noop.d.ts']).toContain('/pkg/runtime/noop.v2')
+  })
+
+  it('nuxt build: the no-op plugin works on oRPC v1 and v2 links', async () => {
+    await setup({}, createNuxt())
+    const source = templates()['orpc-link-noop.mjs']!
+    const { useOrpcInspectorPlugin } = await import(/* @vite-ignore */ `data:text/javascript,${encodeURIComponent(source)}`) as {
+      useOrpcInspectorPlugin: () => StandardLinkPlugin<ClientContext> & StandardLinkPluginV2<ClientContext>
+    }
+    const reply = async () => new Response(JSON.stringify({
+      json: { ok: true },
+    }), {
+      headers: { 'content-type': 'application/json' },
+    })
+
+    const v2 = createORPCClientV2<{ ping: () => Promise<unknown> }>(new RPCLinkV2({
+      url: '/rpc',
+      origin: 'http://local',
+      fetch: reply,
+      plugins: [
+        useOrpcInspectorPlugin(),
+      ],
+    }))
+    await expect(v2.ping()).resolves.toEqual({ ok: true })
+    const v1 = createORPCClient<{ ping: () => Promise<unknown> }>(new RPCLink({
+      url: 'http://local/rpc',
+      fetch: reply,
+      plugins: [
+        useOrpcInspectorPlugin(),
+      ],
+    }))
+    await expect(v1.ping()).resolves.toEqual({ ok: true })
   })
 })

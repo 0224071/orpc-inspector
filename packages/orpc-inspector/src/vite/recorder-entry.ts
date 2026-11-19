@@ -4,12 +4,28 @@ import { RECORD_MASK_KEY } from '../core/record-mask'
 
 export const PACKAGE_NAME = 'orpc-inspector'
 
+/** Specifiers that resolve to the no-op outside development, mapped to the dist file of their real recorder */
+const RECORDER_ENTRIES: Record<string, RecorderEntry> = {
+  [PACKAGE_NAME]: 'index',
+  [`${PACKAGE_NAME}/v2`]: 'v2',
+}
+
+/** `index`: oRPC 1.x entry; `v2`: oRPC v2 entry */
+export type RecorderEntry = 'index' | 'v2'
+
+/** Which real recorder a bare import stands for; undefined for every other id */
+export function recorderEntryOf(id: string): RecorderEntry | undefined {
+  return Object.hasOwn(RECORDER_ENTRIES, id)
+    ? RECORDER_ENTRIES[id]
+    : undefined
+}
+
 /** Real recorder entry; after build it sits next to vite.js, from source (tests) in ../../dist */
-function realRecorderEntry() {
-  const built = fileURLToPath(new URL('./index.js', import.meta.url))
+function realRecorderEntry(entry: RecorderEntry) {
+  const built = fileURLToPath(new URL(`./${entry}.js`, import.meta.url))
   const file = existsSync(built)
     ? built
-    : fileURLToPath(new URL('../../dist/index.js', import.meta.url))
+    : fileURLToPath(new URL(`../../dist/${entry}.js`, import.meta.url))
   return file.replaceAll('\\', '/')
 }
 
@@ -19,10 +35,10 @@ export function keptExternal(external: true | string[] | undefined) {
 }
 
 /** Source of the module standing in for the bare package id */
-export function recorderModule(ssr: boolean) {
-  const entry = JSON.stringify(realRecorderEntry())
+export function recorderModule(ssr: boolean, entry: RecorderEntry = 'index') {
+  const file = JSON.stringify(realRecorderEntry(entry))
   // Server records are always masked; the browser bundle is public, so mask client records too
   return ssr
-    ? `export * from ${entry}\n`
-    : `globalThis[Symbol.for('${RECORD_MASK_KEY.description}')] = true\nexport * from ${entry}\n`
+    ? `export * from ${file}\n`
+    : `globalThis[Symbol.for('${RECORD_MASK_KEY.description}')] = true\nexport * from ${file}\n`
 }

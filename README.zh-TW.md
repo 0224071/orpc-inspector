@@ -19,7 +19,9 @@
 |---|---|---|
 | 框架 | Vite 8.3 以上 | Nuxt 4.6 以上 |
 | DevTools | `@vitejs/devtools` 0.8 | Nuxt DevTools v4（v3 沒有 dock） |
-| oRPC | `@orpc/client` 與 `@orpc/contract` 1.16 以上（1.x） | 同左 |
+| oRPC | `@orpc/client` 與 `@orpc/contract` 1.16 以上（1.x），或 2.0 beta | 同左 |
+
+用 oRPC 2.0 beta（以 `2.0.0-beta.51` 測過）時，改從 `orpc-inspector/v2` 匯入，不是 `orpc-inspector`；見 [oRPC v2](./docs/guide/link.zh-TW.md#orpc-v2beta)。Nuxt 會自動選對。oRPC 2.0 正式版之前，`/v2` 入口可能在 minor 版本就有改動。
 
 inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPILink`](https://orpc.dev/docs/openapi/client/openapi-link) 連的任何 REST API。
 
@@ -130,6 +132,7 @@ inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPIL
 | 了解各部分怎麼串起來 | [運作方式](./docs/guide/how-it-works.zh-TW.md) |
 | 看哪些欄位驗證失敗 | [驗證問題](./docs/guide/validation.zh-TW.md) |
 | 用 interceptor、batch 或 `OpenAPILink` | [Link 整合](./docs/guide/link.zh-TW.md) |
+| 用 oRPC 2.0 beta | [oRPC v2](./docs/guide/link.zh-TW.md#orpc-v2beta) |
 | 不用 Nuxt 也記錄 SSR 呼叫 | [SSR](./docs/guide/ssr.zh-TW.md) |
 | 把 zod 訊息顯示成我的語言 | [翻譯 zod 訊息](./docs/guide/zod-locale.zh-TW.md) |
 | 把失敗貼到 issue 或聊天室 | [複製錯誤報告](./docs/guide/error-reports.zh-TW.md) |

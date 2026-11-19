@@ -225,3 +225,39 @@ describe('sSR server build with production: true', () => {
     expect(await server.render()).toBe('')
   }, TIMEOUT)
 })
+
+describe('oRPC v2 entry in builds', () => {
+  async function buildV2Server(out: string, inspector: InternalPluginOptions) {
+    const { outDir, warnings } = await buildFixture({
+      out,
+      inspector,
+      config: {
+        build: { ssr: 'entry-server-v2.ts' },
+      },
+    })
+    const bundle = readFileSync(join(outDir, 'entry-server-v2.js'), 'utf8')
+    const server = await import(/* @vite-ignore */ pathToFileURL(join(outDir, 'entry-server-v2.js')).href) as { render: () => Promise<string> }
+    return { bundle, server, warnings }
+  }
+
+  it('bundles the real v2 recorder with production: true', async () => {
+    const { bundle, server, warnings } = await buildV2Server('server-v2', { production: true })
+
+    expect(warnings).toEqual([])
+    expect(bundle).not.toMatch(/from ['"]orpc-inspector\/v2['"]/)
+    expect(bundle).toContain('orpc-inspector:store')
+    const head = await server.render()
+    const calls = JSON.parse(head.slice(head.indexOf('=') + 1, -'</script>'.length)) as OrpcCall[]
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ side: 'ssr', procedure: 'ping', url: '/rpc/ping' })
+    expect(calls[0]!.requestHeaders?.authorization).toBe('***')
+  }, TIMEOUT)
+
+  it('keeps the v2 no-op without production, and the v2 link still works', async () => {
+    const { bundle, server, warnings } = await buildV2Server('server-v2-default', {})
+
+    expect(warnings).toEqual([])
+    expect(bundle).not.toContain('orpc-inspector:store')
+    expect(await server.render()).toBe('')
+  }, TIMEOUT)
+})

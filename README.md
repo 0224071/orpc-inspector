@@ -19,7 +19,9 @@ See every oRPC call your app makes (input, output, errors, validation issues, he
 |---|---|---|
 | Framework | Vite 8.3+ | Nuxt 4.6+ |
 | DevTools | `@vitejs/devtools` 0.8 | Nuxt DevTools v4 (v3 has no dock) |
-| oRPC | `@orpc/client` and `@orpc/contract` 1.16+ (1.x) | same |
+| oRPC | `@orpc/client` and `@orpc/contract` 1.16+ (1.x), or 2.0 beta | same |
+
+On oRPC 2.0 beta (tested with `2.0.0-beta.51`), import from `orpc-inspector/v2` instead of `orpc-inspector`; see [oRPC v2](./docs/guide/link.md#orpc-v2-beta). Nuxt picks the right one for you. Until oRPC 2.0 is stable, the `/v2` entry may change in a minor release.
 
 The inspector watches the client only. The backend can be an oRPC server or any REST API through [`OpenAPILink`](https://orpc.dev/docs/openapi/client/openapi-link).
 
@@ -130,6 +132,7 @@ Open the panel from the DevTools dock, not from its URL in a new tab. For other 
 | Understand how the pieces fit together | [How it works](./docs/guide/how-it-works.md) |
 | See which fields failed validation | [Validation issues](./docs/guide/validation.md) |
 | Use interceptors, batching or `OpenAPILink` | [Link integration](./docs/guide/link.md) |
+| Use oRPC 2.0 beta | [oRPC v2](./docs/guide/link.md#orpc-v2-beta) |
 | Record SSR calls without Nuxt | [SSR](./docs/guide/ssr.md) |
 | Show zod messages in my language | [Translating zod messages](./docs/guide/zod-locale.md) |
 | Paste failures into an issue or chat | [Copying error reports](./docs/guide/error-reports.md) |

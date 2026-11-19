@@ -115,6 +115,30 @@ function maskDataHeaders(data: unknown): unknown {
   }
 }
 
+interface ResponseLike {
+  status: number
+  headers?: unknown
+  body?: unknown
+}
+
+/** oRPC v2 keeps the received response on the error (`MalformedResponseError`) or on its cause (decoded `ORPCError`) */
+function responseOf(error: unknown): ResponseLike | undefined {
+  const response = (error as { response?: unknown } | undefined)?.response
+  return response && typeof response === 'object' && typeof (response as ResponseLike).status === 'number'
+    ? response as ResponseLike
+    : undefined
+}
+
+/** v1: `ORPCError.status`; v2 has no status on the error, only on the response kept as its cause */
+function errorStatus(error: ORPCError<string, unknown>): number | undefined {
+  const { status } = error as { status?: unknown }
+  if (typeof status === 'number')
+    return status
+  return error.cause instanceof Error
+    ? responseOf(error.cause)?.status
+    : undefined
+}
+
 function toCallError(error: unknown, mask: boolean): OrpcCallError {
   if (error instanceof ORPCError) {
     const data = toPlain(error.data)
@@ -122,13 +146,30 @@ function toCallError(error: unknown, mask: boolean): OrpcCallError {
       name: 'ORPCError',
       message: error.message,
       code: error.code,
-      status: error.status,
+      status: errorStatus(error),
       data: mask
         ? maskDataHeaders(data)
         : data,
     }
   }
   if (error instanceof Error) {
+    // v2 MalformedResponseError: the response was not in oRPC's format; keep it like v1 keeps it in ORPCError data
+    const response = responseOf(error)
+    if (response) {
+      // Bodies oRPC does not parse (e.g. HTML) stay an unread stream; reading it here would lock it
+      const body = typeof ReadableStream !== 'undefined' && response.body instanceof ReadableStream
+        ? '[ReadableStream]'
+        : response.body
+      const data = toPlain({ status: response.status, headers: response.headers, body })
+      return {
+        name: error.name,
+        message: error.message,
+        status: response.status,
+        data: mask
+          ? maskDataHeaders(data)
+          : data,
+      }
+    }
     return { name: error.name, message: error.message }
   }
   return {
@@ -139,9 +180,17 @@ function toCallError(error: unknown, mask: boolean): OrpcCallError {
 
 type ErrorFields = Pick<OrpcCall, 'state' | 'issuesOf' | 'issuesSource' | 'issues' | 'output' | 'error'>
 
+/** The data that failed validation: `data` in oRPC v1, `invalidData` in v2 */
+function invalidData(error: ValidationError): unknown {
+  return 'invalidData' in error
+    ? error.invalidData
+    : error.data
+}
+
 /**
- * - ResponseValidationPlugin: throws ValidationError directly
- * - RequestValidationPlugin: throws ORPCError (BAD_REQUEST) with a ValidationError cause; no request is sent
+ * - v1 ResponseValidationPlugin: throws ValidationError directly
+ * - v2 ResponseValidationLinkPlugin: throws ORPCError (INTERNAL_SERVER_ERROR) with a ValidationError cause
+ * - Request validation (v1 and v2): throws ORPCError (BAD_REQUEST) with a ValidationError cause; no request is sent
  * - A 4xx from the backend comes back over HTTP; its cause is never a ValidationError. oRPC's server input
  *   validation sends `BAD_REQUEST` with Standard Schema issues in `data.issues`, recorded as server input issues
  *
@@ -152,12 +201,21 @@ export function classifyError(error: unknown, mask = false): ErrorFields {
     return {
       state: 'invalid',
       issuesOf: 'output',
-      output: toPlain(error.data),
+      output: toPlain(invalidData(error)),
       issues: toIssues(error.issues),
       error: toCallError(error, mask),
     }
   }
   if (error instanceof ORPCError && error.cause instanceof ValidationError) {
+    if (error.code !== 'BAD_REQUEST') {
+      return {
+        state: 'invalid',
+        issuesOf: 'output',
+        output: toPlain(invalidData(error.cause)),
+        issues: toIssues(error.cause.issues),
+        error: toCallError(error, mask),
+      }
+    }
     return {
       state: 'invalid',
       issuesOf: 'input',

@@ -905,3 +905,151 @@ describe('panel-app call list row markers', () => {
     expect(ssrTag('proc.browser')).toBe(false)
   })
 })
+
+describe('panel-app attempts and stream events', () => {
+  let panel: Awaited<ReturnType<typeof mount>> | undefined
+
+  async function open(record: OrpcCall) {
+    localStorage.clear()
+    channel.reset()
+    channel.setCalls([record])
+    stubWidth(false)
+    panel = await mount()
+    panel.items()[0]!.click()
+    await flush()
+  }
+
+  afterEach(() => {
+    panel?.unmount()
+    panel = undefined
+    vi.unstubAllGlobals()
+  })
+
+  const text = (selector: string) => [
+    ...panel!.root.querySelectorAll<HTMLElement>(selector),
+  ].map(el => el.textContent!.replaceAll(/\s+/g, ' ').trim())
+  const parts = () => text('.part')
+
+  function attempt(status?: number) {
+    return { method: 'GET', url: 'http://local/rpc/flaky', status }
+  }
+
+  function stream(events: unknown[], eventCount: number, extra: Partial<OrpcCall> = {}): OrpcCall {
+    return {
+      ...call('feed'),
+      procedure: 'feed',
+      events,
+      eventCount,
+      attempts: [
+        attempt(200),
+      ],
+      ...extra,
+    }
+  }
+
+  it('lists every attempt of a retried call', async () => {
+    await open({
+      ...call('flaky'),
+      attempts: [
+        attempt(503),
+        attempt(503),
+        attempt(200),
+      ],
+    })
+    expect(text('.attempt .number')).toEqual(['#1', '#2', '#3'])
+    expect(text('.attempt .status')).toEqual(['503', '503', '200'])
+    expect(text('.summary .meta')[0]).toContain('200')
+  })
+
+  it('shows no response for an attempt whose transport failed', async () => {
+    await open({
+      ...call('flaky'),
+      attempts: [
+        attempt(),
+        attempt(200),
+      ],
+    })
+    expect(text('.attempt .status')).toEqual(['no response', '200'])
+  })
+
+  it('shows no attempt list for a single attempt', async () => {
+    await open({
+      ...call('ping'),
+      attempts: [
+        attempt(200),
+      ],
+    })
+    expect(panel!.root.querySelector('.attempts')).toBeNull()
+    expect(parts()).not.toContain('Attempts')
+  })
+
+  it('shows the error and both events of a stream that failed', async () => {
+    await open(stream([
+      { n: 1 },
+      { n: 2 },
+    ], 2, {
+      state: 'error',
+      error: { name: 'ORPCError', code: 'INTERNAL_SERVER_ERROR', message: 'stream broke' },
+    }))
+    expect(panel!.root.querySelector('.issues')!.textContent).toContain('stream broke')
+    expect(parts()).toContain('Events')
+    // Error data is undefined, so no empty Body is shown
+    expect(parts()).not.toContain('Body')
+    expect(text('.event > div > .row .key')).toEqual(['1:', '2:'])
+    expect(text('.event-count')).toEqual(['2 events'])
+    // Body is hidden, so Events carries the Response copy toggle
+    expect(panel!.root.querySelector('.events')!.previousElementSibling!.querySelector('.copy-toggle')).not.toBeNull()
+  })
+
+  it('labels the kept events of a long stream by their position', async () => {
+    await open(stream(Array.from({ length: 100 }, (_, i) => i + 51), 150))
+    expect(text('.event-count')).toEqual(['150 events · showing the last 100'])
+    expect(text('.event > div > .row .key')[0]).toBe('51:')
+  })
+
+  it('says a stream without events has none, and shows no empty body', async () => {
+    await open(stream([], 0))
+    expect(text('.events')).toEqual(['(no events)'])
+    expect(parts()).not.toContain('Body')
+    // The Response copy toggle moves to Events
+    expect(panel!.root.querySelector('.events')!.previousElementSibling!.querySelector('.copy-toggle')).not.toBeNull()
+  })
+
+  it('keeps the copy toggle on Body when a stream has error data', async () => {
+    await open(stream([1], 1, {
+      state: 'error',
+      error: {
+        name: 'ORPCError',
+        code: 'BAD_GATEWAY',
+        message: 'upstream',
+        data: { retry: true },
+      },
+    }))
+    expect(parts()).toEqual(expect.arrayContaining(['Body', 'Events']))
+    expect(panel!.root.querySelector('.events')!.previousElementSibling!.querySelector('.copy-toggle')).toBeNull()
+  })
+
+  it('marks where a reconnect starts', async () => {
+    await open(stream([0, 1, 0, 1], 4, {
+      attempts: [
+        attempt(200),
+        {
+          ...attempt(200),
+          eventsBefore: 2,
+        },
+      ],
+    }))
+    const rows = [
+      ...panel!.root.querySelectorAll<HTMLElement>('.events > li'),
+    ].map(li => li.classList.contains('divider')
+      ? li.textContent!.trim()
+      : li.querySelector('.key')!.textContent)
+    expect(rows).toEqual([
+      '1:',
+      '2:',
+      'Reconnected · attempt 2',
+      '3:',
+      '4:',
+    ])
+  })
+})

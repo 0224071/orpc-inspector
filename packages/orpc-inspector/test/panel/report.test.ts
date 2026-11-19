@@ -626,3 +626,110 @@ describe('input rejected by the server', () => {
     expect(buildErrorsReport([call, client], markdown)).not.toContain('Same error')
   })
 })
+
+describe('attempts and stream events', () => {
+  const attempt = (status?: number, eventsBefore?: number) => ({
+    method: 'POST',
+    url: '/rpc/feed',
+    status,
+    ...(eventsBefore === undefined
+      ? {}
+      : { eventsBefore }),
+  })
+
+  const failedStream: OrpcCall = {
+    id: 's',
+    procedure: 'feed',
+    method: 'POST',
+    url: '/rpc/feed',
+    status: 200,
+    side: 'client',
+    state: 'error',
+    startedAt: 0,
+    attempts: [
+      attempt(200),
+    ],
+    events: [
+      { token: 'a' },
+      { n: 1 },
+    ],
+    eventCount: 2,
+    error: { name: 'ORPCError', code: 'INTERNAL_SERVER_ERROR', message: 'stream broke' },
+  }
+
+  it('adds an attempts line to the request fields of a retried call', () => {
+    const retried: OrpcCall = {
+      ...errorCall,
+      attempts: [
+        attempt(503),
+        attempt(503),
+        attempt(500),
+      ],
+    }
+    expect(buildCallReport(retried, markdown)).toContain('- **Attempts**: 3 (503 → 503 → 500)')
+    expect(buildCallReport({
+      ...retried,
+      attempts: [
+        attempt(),
+        attempt(200),
+      ],
+    }, markdown)).toContain('2 (no response → 200)')
+  })
+
+  it('leaves a single-attempt call unchanged', () => {
+    const single = {
+      ...errorCall,
+      attempts: [
+        attempt(409),
+      ],
+    }
+    expect(buildCallReport(single, markdown)).toBe(buildCallReport(errorCall, markdown))
+  })
+
+  it('drops the attempts line with the Request section', () => {
+    const retried = {
+      ...errorCall,
+      attempts: [
+        attempt(503),
+        attempt(200),
+      ],
+    }
+    expect(buildCallReport(retried, markdown, { request: false })).not.toContain('Attempts')
+  })
+
+  it('includes the masked events of a stream that failed', () => {
+    const text = buildCallReport(failedStream, markdown)
+    expect(text).toContain('<details><summary>Events (2)</summary>')
+    expect(text).toContain('"token": "***"')
+    expect(text).toContain('"n": 1')
+    expect(text).not.toContain('"a"')
+  })
+
+  it('notes when only the last events were kept', () => {
+    const long = {
+      ...failedStream,
+      events: [1, 2],
+      eventCount: 150,
+    }
+    expect(buildCallReport(long, markdown)).toContain('Events (150, last 2)')
+  })
+
+  it('groups events by attempt after a reconnect', () => {
+    const reconnected: OrpcCall = {
+      ...failedStream,
+      attempts: [
+        attempt(200),
+        attempt(200, 2),
+      ],
+      events: [0, 1, 0],
+      eventCount: 3,
+    }
+    const text = buildCallReport(reconnected, markdown)
+    expect(text).toContain('"attempt 1": [')
+    expect(text).toContain('"attempt 2": [')
+  })
+
+  it('leaves out events when the Response section is off', () => {
+    expect(buildCallReport(failedStream, markdown, { output: false })).not.toContain('Events')
+  })
+})

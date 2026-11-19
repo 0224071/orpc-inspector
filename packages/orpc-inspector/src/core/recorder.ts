@@ -25,6 +25,8 @@ interface RecordableOptions {
   path: readonly string[]
   input: unknown
   context: object
+  /** The caller's signal; an abort makes the call cancelled */
+  signal?: AbortSignal
 }
 
 interface TransportableOptions {
@@ -97,7 +99,11 @@ export function createCallRecorder(sink: CallSinkSource) {
     }
     const commit = (done: boolean) => target.commit(snapshot(call), done)
     const fail = (error: unknown) => {
-      Object.assign(call, classifyError(error, mask))
+      // The caller cancelled; whatever the error, it is not a failure of the call
+      if (rest.signal?.aborted)
+        call.state = 'cancelled'
+      else
+        Object.assign(call, classifyError(error, mask))
     }
     const finish = () => {
       call.duration = Date.now() - call.startedAt
@@ -169,6 +175,9 @@ export function createCallRecorder(sink: CallSinkSource) {
       call.status = attempt.status
       call.responseHeaders = attempt.responseHeaders
     }
+    // A new attempt after the stream began is a reconnect; mark where its events start
+    if (call?.events)
+      attempt.eventsBefore = call.eventCount
     call?.attempts?.push(attempt)
     syncTop()
     const response = await options.next()

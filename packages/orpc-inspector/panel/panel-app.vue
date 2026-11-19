@@ -25,6 +25,7 @@ import ReportMenu from './report-menu.vue'
 import { useReportTemplates } from './report-settings'
 import { responseView } from './response-view'
 import SettingsPage from './settings-page.vue'
+import { streamView } from './stream-view'
 
 type Filter = 'all' | 'error' | 'invalid'
 
@@ -227,6 +228,14 @@ async function jumpToIssue(group: IssueGroup, groupIndex: number) {
 
 const response = computed(() => selected.value && responseView(selected.value))
 const responseValue = computed(() => response.value?.value)
+const stream = computed(() => selected.value && streamView(selected.value))
+/** A stream has no body; it shows one only for error data */
+const showBody = computed(() => !stream.value || responseValue.value !== undefined)
+/** Shown only for a retried call */
+const attempts = computed(() => (selected.value?.attempts?.length ?? 0) > 1
+  ? selected.value!.attempts!
+  : [])
+const eventContext = createContext()
 
 /** Connection dot color; anything else, e.g. `connecting`, is amber */
 const STATUS_COLOR: Partial<Record<string, string>> = {
@@ -584,6 +593,19 @@ async function clear() {
         <h3 class="mt-4 mb-1.5 text-[12px] text-muted uppercase">
           {{ t('detail.request') }}
         </h3>
+        <template v-if="attempts.length">
+          <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
+            <span class="part text-[12px] font-semibold">{{ t('detail.attempts') }}</span>
+          </div>
+          <ol class="attempts m-0 list-none rounded-md border border-border px-0 py-1.5 font-mono text-[12px] leading-[1.6]">
+            <li v-for="(attempt, i) in attempts" :key="i" class="attempt flex items-baseline gap-2 px-2.5">
+              <span class="number flex-none text-muted">#{{ i + 1 }}</span>
+              <span class="method flex-none text-[11px] text-muted">{{ attempt.method }}</span>
+              <span class="status flex-none" :class="{ 'text-bad': attempt.status === undefined || attempt.status >= 400 }">{{ attempt.status ?? t('detail.noResponse') }}</span>
+              <span class="url truncate" :title="attempt.url">{{ attempt.url }}</span>
+            </li>
+          </ol>
+        </template>
         <template v-if="panelSettings.showHeaders">
           <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
             <span class="part text-[12px] font-semibold">{{ t('detail.headers') }}</span>
@@ -644,23 +666,53 @@ async function clear() {
             />
           </div>
         </template>
-        <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
-          <span class="part text-[12px] font-semibold">{{ t('detail.body') }}</span>
-          <CopyToggle
-            v-if="selected.state !== 'pending'"
-            :model-value="isCopyPart('output')"
-            @update:model-value="setCopyPart('output', $event)"
-          />
-        </div>
-        <div ref="responseTree" class="tree rounded-md border border-border py-1.5 font-mono text-[12px] leading-[1.6]">
-          <JsonNode
-            v-if="responseValue !== undefined"
-            :ctx="responseContext"
-            :path="[]"
-            :value="responseValue"
-          />
-          <span v-else class="muted text-[12px] text-muted">{{ notSent ? t('detail.notSent') : t('detail.empty') }}</span>
-        </div>
+        <template v-if="showBody">
+          <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
+            <span class="part text-[12px] font-semibold">{{ t('detail.body') }}</span>
+            <CopyToggle
+              v-if="selected.state !== 'pending'"
+              :model-value="isCopyPart('output')"
+              @update:model-value="setCopyPart('output', $event)"
+            />
+          </div>
+          <div ref="responseTree" class="tree rounded-md border border-border py-1.5 font-mono text-[12px] leading-[1.6]">
+            <JsonNode
+              v-if="responseValue !== undefined"
+              :ctx="responseContext"
+              :path="[]"
+              :value="responseValue"
+            />
+            <span v-else class="muted text-[12px] text-muted">{{ notSent ? t('detail.notSent') : t('detail.empty') }}</span>
+          </div>
+        </template>
+        <template v-if="stream">
+          <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
+            <span class="part text-[12px] font-semibold">{{ t('detail.events') }}</span>
+            <span class="event-count text-[11px] text-muted">
+              {{ tc('detail.eventCount', stream.total) }}<template v-if="stream.kept < stream.total">
+                · {{ t('detail.eventsKept', { kept: stream.kept }) }}
+              </template>
+            </span>
+            <CopyToggle
+              v-if="!showBody && selected.state !== 'pending'"
+              :model-value="isCopyPart('output')"
+              @update:model-value="setCopyPart('output', $event)"
+            />
+          </div>
+          <ol class="events tree m-0 list-none rounded-md border border-border px-0 py-1.5 font-mono text-[12px] leading-[1.6]">
+            <template v-for="entry in stream.entries" :key="entry.kind === 'event' ? entry.position : -entry.attempt">
+              <li v-if="entry.kind === 'divider'" class="divider my-1 flex items-center gap-2 px-2.5 font-sans text-[11px] text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                {{ t('detail.reconnect', { attempt: entry.attempt }) }}
+              </li>
+              <li v-else class="event">
+                <JsonNode :ctx="eventContext" :name="entry.position" :path="[entry.position - 1]" :value="entry.value" />
+              </li>
+            </template>
+            <li v-if="!stream.entries.length" class="muted px-2.5 text-[12px] text-muted">
+              {{ t('detail.noEvents') }}
+            </li>
+          </ol>
+        </template>
       </section>
       <section v-if="selected && !selectionShown && view === 'split'" class="detail empty overflow-auto p-6 text-center text-muted max-sm:in-[.is-list]:hidden">
         {{ t('panel.selectionHidden') }}

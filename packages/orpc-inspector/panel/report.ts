@@ -2,6 +2,7 @@ import type { OrpcCall, OrpcHeaders } from '../src/core/types'
 import type { IssueGroup } from './group-issues'
 import { isSensitiveKey, MASK, maskSensitive } from '../src/core/mask'
 import { groupIssues } from './group-issues'
+import { eventsByAttempt } from './stream-view'
 
 export { DEFAULT_MASK_PATTERN, isValidMaskPattern, maskSensitive } from '../src/core/mask'
 
@@ -345,6 +346,23 @@ function jsonText(value: unknown, options: ReportOptions) {
   return JSON.stringify(trimmed, null, 2) ?? 'undefined'
 }
 
+/** `3 (503 → 503 → 200)`; undefined for a call with one attempt or none */
+function attemptsText(call: OrpcCall) {
+  const attempts = call.attempts ?? []
+  if (attempts.length < 2)
+    return
+  return `${attempts.length} (${attempts.map(attempt => attempt.status ?? 'no response').join(' → ')})`
+}
+
+/** `Events (150, last 100)` */
+function eventsLabel(call: OrpcCall) {
+  const total = call.eventCount ?? 0
+  const kept = call.events?.length ?? 0
+  return kept < total
+    ? `Events (${total}, last ${kept})`
+    : `Events (${total})`
+}
+
 function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
   const r = createRenderer(options.syntax)
   const { sections } = options
@@ -366,11 +384,13 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
   // The request is not sent when the client's input validation fails; the server's rejection was sent
   const sent = call.issuesOf !== 'input' || call.issuesSource === 'server'
 
+  const attempts = attemptsText(call)
   const fields = [
     sections.request
     && r.field('Request', sent
       ? `${request}${status} (${side})`
       : `${request} (not sent · ${side})`),
+    sections.request && attempts && r.field('Attempts', attempts),
     sections.time && r.field('Time', `${formatDateTime(call.startedAt)}${duration}`),
     sections.repeat && repeat > 1 && r.field('Repeats', `Same error ×${repeat} (showing the first)`),
   ].filter((line): line is string => typeof line === 'string')
@@ -409,6 +429,10 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
       : 'Response'
     // Success reports are for backend devs to read the data, so keep it expanded
     parts.push(r.block(label, jsonText(output, options), call.state !== 'success'))
+  }
+  if (sections.output && call.eventCount !== undefined) {
+    const events = maskSensitive(eventsByAttempt(call) ?? call.events ?? [], options.maskPattern)
+    parts.push(r.block(eventsLabel(call), jsonText(events, options), call.state !== 'success'))
   }
   return parts.join('\n\n')
 }

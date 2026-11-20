@@ -3,11 +3,13 @@ import type { OrpcCall, OrpcInspectorProtocol } from '../../src/core/types'
 import { connectPanelChannel } from 'devframe/in-page-channel'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { toBadge } from '../../src/client/dock-badge'
+import { PRESERVE_LOG_ENABLED_KEY, PRESERVE_LOG_RECORDS_KEY } from '../../src/client/preserve-log'
 import { getOrpcInspectorStore } from '../../src/core/store'
 import { ISSUE_TRANSLATOR_KEY } from '../../src/core/translate-issues'
 import { ORPC_INSPECTOR_CHANNEL, ORPC_INSPECTOR_SSR_GLOBAL } from '../../src/core/types'
 
 const STARTED_KEY = Symbol.for('orpc-inspector:page-script')
+const PRESERVE_KEY = Symbol.for('orpc-inspector:preserve-log')
 
 function makeCall(id: string, patch: Partial<OrpcCall> = {}): OrpcCall {
   return {
@@ -52,6 +54,8 @@ beforeEach(() => {
 afterEach(() => {
   ;(g[STARTED_KEY] as { close: () => void } | undefined)?.close()
   delete g[STARTED_KEY]
+  ;(g[PRESERVE_KEY] as { dispose: () => void } | undefined)?.dispose()
+  sessionStorage.clear()
   delete g[ORPC_INSPECTOR_SSR_GLOBAL]
   delete g[ISSUE_TRANSLATOR_KEY]
 })
@@ -147,6 +151,61 @@ describe('page script', () => {
     ]
     const { panel, state } = await startWithPanel()
     expect(listOf(state).map(call => call.id)).toEqual(['s2', 's1'])
+    panel.close()
+  })
+
+  it('publishes the Preserve log state and changes it through preserveLog:set', async () => {
+    const { panel } = await startWithPanel()
+    const preserve = await panel.sharedState.get('preserveLog')
+    expect(preserve.value()).toEqual({
+      enabled: false,
+      available: true,
+      dropped: 0,
+      summarized: 0,
+      failed: false,
+    })
+
+    await panel.call('preserveLog:set', true)
+    expect(sessionStorage.getItem(PRESERVE_LOG_ENABLED_KEY)).toBe('1')
+    await vi.waitFor(() => expect(preserve.value().enabled).toBe(true))
+
+    await panel.call('preserveLog:set', false)
+    expect(sessionStorage.getItem(PRESERVE_LOG_ENABLED_KEY)).toBeNull()
+    await vi.waitFor(() => expect(preserve.value().enabled).toBe(false))
+    panel.close()
+  })
+
+  it('shows Preserve log as on with the restored records right after connecting', async () => {
+    sessionStorage.setItem(PRESERVE_LOG_ENABLED_KEY, '1')
+    sessionStorage.setItem(PRESERVE_LOG_RECORDS_KEY, JSON.stringify({
+      v: 1,
+      dropped: 0,
+      list: [
+        makeCall('old', { state: 'pending' }),
+      ],
+    }))
+    g[ORPC_INSPECTOR_SSR_GLOBAL] = [
+      makeCall('s1', { side: 'ssr' }),
+    ]
+    const { panel, state } = await startWithPanel()
+    const preserve = await panel.sharedState.get('preserveLog')
+    expect(preserve.value().enabled).toBe(true)
+    expect(listOf(state).map(call => [call.id, call.state, call.fromPreviousPage])).toEqual([
+      ['s1', 'success', undefined],
+      ['old', 'unknown', true],
+    ])
+    panel.close()
+  })
+
+  it('deletes the saved records when the panel clears', async () => {
+    sessionStorage.setItem(PRESERVE_LOG_ENABLED_KEY, '1')
+    const { panel } = await startWithPanel()
+    getOrpcInspectorStore().upsert(makeCall('a'))
+    dispatchEvent(new Event('pagehide'))
+    expect(sessionStorage.getItem(PRESERVE_LOG_RECORDS_KEY)).toContain('"a"')
+
+    await panel.call('calls:clear')
+    expect(JSON.parse(sessionStorage.getItem(PRESERVE_LOG_RECORDS_KEY)!).list).toEqual([])
     panel.close()
   })
 
@@ -255,5 +314,13 @@ describe('dock badge', () => {
       makeCall('c'),
     ]))
       .toEqual({ badge: '2', badgeVariant: 'danger' })
+  })
+
+  it('does not count records whose outcome is unknown', () => {
+    expect(toBadge([
+      makeCall('a', { state: 'unknown' }),
+      makeCall('b', { state: 'error' }),
+    ]))
+      .toEqual({ badge: '1', badgeVariant: 'danger' })
   })
 })

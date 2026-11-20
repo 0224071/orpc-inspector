@@ -20,7 +20,7 @@ export function headerCell(name: string, value: string, maskPattern: string, rev
 
 /**
  * Error data from a non-oRPC backend carries the raw response headers as `data.headers`
- * (see `maskDataHeaders` in classify-error); shows them like the Headers section.
+ * (see `maskDataHeaders` in core/headers); shows them like the Headers section.
  * `path` is relative to the error data; undefined means not a sensitive header.
  */
 export function dataHeaderCell(path: (string | number)[], value: unknown, maskPattern: string, revealed: boolean): HeaderCell | undefined {

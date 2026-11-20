@@ -14,16 +14,20 @@ export function renderOrpcInspectorScript(collector: { serialize: () => OrpcCall
   return `<script>window.${ORPC_INSPECTOR_SSR_GLOBAL}=${toScriptJson(collector.serialize())}</script>`
 }
 
-/** Merges SSR records into the browser store in original order; existing ids are skipped so repeated hydration is idempotent */
+/**
+ * Merges SSR records into the browser store in original order; existing ids are skipped so repeated hydration is idempotent.
+ * A record with the same id restored by Preserve log is replaced, so this document's version wins (Nuxt hydrates after the restore)
+ */
 export function hydrateOrpcInspector(calls: readonly OrpcCall[] | undefined): void {
   if (!calls?.length)
     return
   const store = getOrpcInspectorStore()
-  const known = new Set(store.list.map(call => call.id))
+  const known = new Map(store.list.map(call => [call.id, call]))
   for (const call of calls) {
-    if (known.has(call.id))
+    const existing = known.get(call.id)
+    if (existing && !existing.fromPreviousPage)
       continue
-    known.add(call.id)
+    known.set(call.id, call)
     store.upsert(call)
   }
 }

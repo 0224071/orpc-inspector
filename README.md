@@ -118,6 +118,7 @@ Run `nuxt dev` and open **oRPC** in the DevTools dock. The first time, enter the
 - 🔍 **Every call in one place**: input, output, errors, [validation issues](./docs/guide/validation.md) and headers, from the client and [SSR](./docs/guide/ssr.md)
 - 🛠️ **In the DevTools dock**: Vite DevTools for Vue, React and other Vite apps; Nuxt DevTools v4 for Nuxt
 - 🌐 **Readable errors**: [zod messages in your language](./docs/guide/zod-locale.md), [error reports](./docs/guide/error-reports.md) for Markdown, Discord or LINE
+- 📌 **[Preserve log](./docs/guide/preserve-log.md)**: keep calls across a reload or a navigation in the same tab, for the bug report
 - 🔒 **Sensitive headers masked**: `authorization`, `cookie` and similar headers are hidden in the panel and in copied reports
 - 📦 **Zero cost in production**: production builds get a no-op unless you [opt in](./docs/guide/production.md)
 
@@ -136,6 +137,7 @@ Open the panel from the DevTools dock, not from its URL in a new tab. For other 
 | Record SSR calls without Nuxt | [SSR](./docs/guide/ssr.md) |
 | Show zod messages in my language | [Translating zod messages](./docs/guide/zod-locale.md) |
 | Paste failures into an issue or chat | [Copying error reports](./docs/guide/error-reports.md) |
+| Keep calls made right before a redirect or reload | [Preserve log](./docs/guide/preserve-log.md) |
 | Keep the inspector on a staging deploy | [Production builds](./docs/guide/production.md) |
 | Fix a panel that does not open or misses calls | [Troubleshooting](./docs/guide/troubleshooting.md) |
 

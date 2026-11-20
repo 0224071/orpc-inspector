@@ -9,20 +9,39 @@ const channel = vi.hoisted(() => {
   interface State { calls: Record<string, unknown>, order: string[] }
   const updated = new Set<Listener<State>>()
   let list: { id: string }[] = []
+  interface Preserve { enabled: boolean, available: boolean, dropped: number, summarized: number, failed: boolean }
+  const preserveUpdated = new Set<Listener<Preserve>>()
+  const preserveOff: Preserve = {
+    enabled: false,
+    available: true,
+    dropped: 0,
+    summarized: 0,
+    failed: false,
+  }
+  let preserve = preserveOff
   const toState = (): State => ({
     calls: Object.fromEntries(list.map(item => [item.id, item])),
     order: list.map(item => item.id),
   })
-  const call = vi.fn(async (_name: string) => {})
+  const call = vi.fn(async (_name: string, ..._args: unknown[]) => {})
   return {
     call,
     setCalls(next: unknown[]) {
       list = next as { id: string }[]
       updated.forEach(fn => fn(toState()))
     },
+    setPreserveLog(next: Partial<Preserve>) {
+      preserve = {
+        ...preserve,
+        ...next,
+      }
+      preserveUpdated.forEach(fn => fn(preserve))
+    },
     reset() {
       list = []
       updated.clear()
+      preserve = preserveOff
+      preserveUpdated.clear()
       call.mockClear()
     },
     create: () => ({
@@ -31,14 +50,22 @@ const channel = vi.hoisted(() => {
         on: () => {},
       },
       sharedState: {
-        get: async () => ({
-          value: toState,
-          on: (event: string, fn: Listener<State>) => {
-            if (event === 'updated') {
-              updated.add(fn)
+        get: async (name: string) => name === 'preserveLog'
+          ? {
+              value: () => preserve,
+              on: (event: string, fn: Listener<Preserve>) => {
+                if (event === 'updated')
+                  preserveUpdated.add(fn)
+              },
             }
-          },
-        }),
+          : {
+              value: toState,
+              on: (event: string, fn: Listener<State>) => {
+                if (event === 'updated') {
+                  updated.add(fn)
+                }
+              },
+            },
       },
       call,
       close: () => {},
@@ -1051,5 +1078,201 @@ describe('panel-app attempts and stream events', () => {
       '3:',
       '4:',
     ])
+  })
+})
+
+describe('panel-app Preserve log', () => {
+  let panel: Awaited<ReturnType<typeof mount>> | undefined
+
+  beforeEach(() => {
+    localStorage.clear()
+    channel.reset()
+    stubWidth(false)
+  })
+
+  afterEach(() => {
+    panel?.unmount()
+    panel = undefined
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  const checkbox = () => panel!.root.querySelector<HTMLInputElement>('.preserve-log input')!
+  const note = () => panel!.root.querySelector<HTMLElement>('.preserve-note')
+  const row = (procedure: string) => panel!.items().find(item => item.textContent?.includes(procedure))!
+  const text = (selector: string) => [
+    ...panel!.root.querySelectorAll<HTMLElement>(selector),
+  ].map(el => el.textContent!.replaceAll(/\s+/g, ' ').trim())
+
+  async function open(record: OrpcCall) {
+    channel.setCalls([record])
+    panel = await mount()
+    panel.items()[0]!.click()
+    await flush()
+  }
+
+  it('shows the toggle next to Clear and changes the page setting', async () => {
+    panel = await mount()
+    const label = panel.root.querySelector('.preserve-log')!
+    expect(label.previousElementSibling?.classList).toContain('clear')
+    expect(label.textContent).toContain('Preserve log')
+    expect(checkbox().checked).toBe(false)
+    checkbox().checked = true
+    checkbox().dispatchEvent(new Event('change'))
+    expect(channel.call).toHaveBeenCalledWith('preserveLog:set', true)
+  })
+
+  it('reflects the page setting after reconnecting', async () => {
+    channel.setPreserveLog({ enabled: true })
+    panel = await mount()
+    expect(checkbox().checked).toBe(true)
+  })
+
+  it('disables the toggle and says why when sessionStorage is unavailable', async () => {
+    channel.setPreserveLog({ available: false })
+    panel = await mount()
+    expect(checkbox().disabled).toBe(true)
+    expect(panel.root.querySelector<HTMLElement>('.preserve-log')!.title).toContain('cannot use sessionStorage')
+  })
+
+  it('notes records saved without their bodies, with both counts in the tooltip', async () => {
+    channel.setPreserveLog({ enabled: true, summarized: 2 })
+    panel = await mount()
+    expect(note()!.textContent).toBe('Partially preserved')
+    expect(note()!.title).toBe('0 calls left out · 2 calls saved without their bodies')
+    channel.setPreserveLog({ dropped: 0, summarized: 0 })
+    await nextTick()
+    expect(note()).toBeNull()
+  })
+
+  it('says when the last write failed, and nothing while off', async () => {
+    channel.setPreserveLog({ enabled: true, failed: true, dropped: 3 })
+    panel = await mount()
+    expect(note()!.textContent).toBe('Not preserved: storage is full')
+    channel.setPreserveLog({ enabled: false })
+    await nextTick()
+    expect(note()).toBeNull()
+  })
+
+  it('shows the status in Traditional Chinese', async () => {
+    vi.spyOn(navigator, 'language', 'get').mockReturnValue('zh-TW')
+    channel.setPreserveLog({ enabled: true, dropped: 1 })
+    panel = await mount()
+    expect(panel.root.querySelector('.preserve-log')!.textContent).toContain('保留紀錄')
+    expect(note()!.textContent).toBe('部分未保存')
+  })
+
+  it('tags only restored rows as from a previous page', async () => {
+    channel.setCalls([
+      {
+        ...call('login'),
+        fromPreviousPage: true,
+      },
+      call('after'),
+    ])
+    panel = await mount()
+    const tagged = (procedure: string) => !!row(procedure).querySelector('.tag.is-previous-page')
+    expect(tagged('proc.login')).toBe(true)
+    expect(tagged('proc.after')).toBe(false)
+    expect(row('proc.login').querySelector('.tag.is-previous-page')!.textContent).toBe('Previous page')
+  })
+
+  it('gives unknown its own indicator, apart from pending', async () => {
+    channel.setCalls([
+      {
+        ...call('p'),
+        state: 'pending',
+        status: undefined,
+      },
+      {
+        ...call('u'),
+        state: 'unknown',
+        status: undefined,
+        fromPreviousPage: true,
+      },
+    ])
+    panel = await mount()
+    const indicator = (procedure: string) => row(procedure).querySelector<HTMLElement>('[role="img"]')!
+    expect(indicator('proc.u').className).not.toBe(indicator('proc.p').className)
+    expect(indicator('proc.u').getAttribute('aria-label')).toBe('Outcome unknown')
+    expect(indicator('proc.u').title).toBe('Outcome unknown')
+  })
+
+  it('names unknown in Traditional Chinese', async () => {
+    vi.spyOn(navigator, 'language', 'get').mockReturnValue('zh-TW')
+    channel.setCalls([
+      {
+        ...call('u'),
+        state: 'unknown',
+      },
+    ])
+    panel = await mount()
+    expect(row('proc.u').querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('結果未知')
+  })
+
+  it('says the page was left before an unknown call finished', async () => {
+    await open({
+      ...call('u'),
+      state: 'unknown',
+      status: undefined,
+      duration: undefined,
+      fromPreviousPage: true,
+      input: { id: 1 },
+    })
+    expect(text('.from-previous-page')).toEqual(['From a previous page'])
+    expect(text('.outcome-unknown')[0]).toContain('page was left before this call finished')
+    expect(text('.summary .badge')).toEqual(['Outcome unknown'])
+    expect(text('.summary .meta')[0]).not.toContain('ms')
+    expect(panel!.root.querySelector('.issues')).toBeNull()
+  })
+
+  it('shows a masked header of a restored record with no reveal control', async () => {
+    await open({
+      ...call('r'),
+      fromPreviousPage: true,
+      requestHeaders: { authorization: '***' },
+    })
+    panel!.root.querySelector<HTMLButtonElement>('.tree .row')!.click()
+    await nextTick()
+    const cell = [
+      ...panel!.root.querySelectorAll('.headers td'),
+    ][0]!
+    expect(cell.textContent!.trim()).toBe('***')
+    expect(cell.querySelector('.reveal')).toBeNull()
+  })
+
+  it('shows placeholders with the size for bodies left out of a large record', async () => {
+    await open({
+      ...call('big'),
+      fromPreviousPage: true,
+      notPreserved: {
+        fields: ['input', 'output'],
+        size: 120 * 1024,
+      },
+    })
+    expect(text('.not-preserved')).toEqual([
+      '(not preserved: 120 KB, over the 64 KB limit)',
+      '(not preserved: 120 KB, over the 64 KB limit)',
+    ])
+  })
+
+  it('shows a placeholder for stream events left out, keeping the count', async () => {
+    await open({
+      ...call('feed'),
+      state: 'unknown',
+      eventCount: 400,
+      notPreserved: {
+        fields: ['events'],
+        size: 2 * 1024 * 1024,
+      },
+    })
+    expect(text('.event-count')).toEqual(['400 events'])
+    expect(text('.events .not-preserved')).toEqual(['(not preserved: 2.0 MB, over the 64 KB limit)'])
+  })
+
+  it('shows no previous-page note on a call of this page', async () => {
+    await open(call('now'))
+    expect(panel!.root.querySelector('.from-previous-page')).toBeNull()
+    expect(panel!.root.querySelector('.outcome-unknown')).toBeNull()
   })
 })

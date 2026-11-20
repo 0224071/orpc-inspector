@@ -5,6 +5,7 @@ import { getOrpcInspectorStore } from '../core/store'
 import { getIssueTranslator, translateCall } from '../core/translate-issues'
 import { ORPC_INSPECTOR_CHANNEL, ORPC_INSPECTOR_SSR_GLOBAL } from '../core/types'
 import { syncDockBadge } from './dock-badge'
+import { startPreserveLog } from './preserve-log'
 
 const STARTED_KEY = Symbol.for('orpc-inspector:page-script')
 
@@ -101,13 +102,22 @@ export function startPageScript(): PageScriptChannel {
 
   const store = getOrpcInspectorStore()
   hydrateOrpcInspector(g[ORPC_INSPECTOR_SSR_GLOBAL])
+  // After SSR records, so restored records go after them and ids already present win
+  const preserve = startPreserveLog(store)
 
   const channel = createPageScriptChannel<OrpcInspectorProtocol>({
     name: ORPC_INSPECTOR_CHANNEL,
     functions: {
       'calls:clear': {
         type: 'action',
-        handler: () => store.clear(),
+        handler: () => {
+          store.clear()
+          preserve.cleared()
+        },
+      },
+      'preserveLog:set': {
+        type: 'action',
+        handler: (enabled: boolean) => preserve.setEnabled(enabled),
       },
     },
   })
@@ -120,6 +130,13 @@ export function startPageScript(): PageScriptChannel {
     initialValue: publisher.initial(store.list),
   })
   syncDockBadge(() => store.list, store.subscribe)
+
+  const preserveState = channel.sharedState.get('preserveLog', {
+    initialValue: { ...preserve.state },
+  })
+  preserve.onState((next) => {
+    void preserveState.then(s => s.mutate(draft => Object.assign(draft, next)))
+  })
 
   store.subscribe(throttle(() => {
     void state.then(s => s.mutate((draft) => {

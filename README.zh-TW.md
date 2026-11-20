@@ -118,6 +118,7 @@ inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPIL
 - 🔍 **所有呼叫集中檢視**：input、output、錯誤、[驗證問題](./docs/guide/validation.zh-TW.md)與 headers，含 client 與 [SSR](./docs/guide/ssr.zh-TW.md)
 - 🛠️ **在 DevTools dock 裡**：Vue、React 等 Vite app 用 Vite DevTools；Nuxt 用 Nuxt DevTools v4
 - 🌐 **錯誤好讀**：[zod 訊息顯示成你的語言](./docs/guide/zod-locale.zh-TW.md)，[錯誤報告](./docs/guide/error-reports.zh-TW.md)可複製成 Markdown、Discord 或 LINE
+- 📌 **[保留紀錄](./docs/guide/preserve-log.zh-TW.md)**：同一個分頁重新整理或換頁後保留呼叫，方便回報 bug
 - 🔒 **遮罩機敏 header**：`authorization`、`cookie` 等 header 在面板與複製的報告中隱藏
 - 📦 **production 零成本**：production build 拿到 no-op，除非[自行開啟](./docs/guide/production.zh-TW.md)
 
@@ -136,6 +137,7 @@ inspector 只看 client 端。後端可以是 oRPC server，或透過 [`OpenAPIL
 | 不用 Nuxt 也記錄 SSR 呼叫 | [SSR](./docs/guide/ssr.zh-TW.md) |
 | 把 zod 訊息顯示成我的語言 | [翻譯 zod 訊息](./docs/guide/zod-locale.zh-TW.md) |
 | 把失敗貼到 issue 或聊天室 | [複製錯誤報告](./docs/guide/error-reports.zh-TW.md) |
+| 保留跳轉或重新整理前的呼叫 | [保留紀錄](./docs/guide/preserve-log.zh-TW.md) |
 | 在測試環境保留 inspector | [Production build](./docs/guide/production.zh-TW.md) |
 | 面板打不開或少了呼叫 | [疑難排解](./docs/guide/troubleshooting.zh-TW.md) |
 

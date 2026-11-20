@@ -58,6 +58,49 @@ describe('getOrpcInspectorStore', () => {
     expect(listener.mock.calls.map(([list]) => list.length)).toEqual([1, 0])
   })
 
+  it('appends older records after the current ones in one update, skipping known ids', () => {
+    const store = getOrpcInspectorStore()
+    store.upsert(makeCall('a'))
+    store.upsert(makeCall('b', { state: 'success' }))
+    const listener = vi.fn()
+    store.subscribe(listener)
+    const added = store.appendOlder([
+      makeCall('x'),
+      makeCall('b'),
+      makeCall('y'),
+    ])
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(added.map(call => call.id)).toEqual(['x', 'y'])
+    expect(store.list.map(call => [call.id, call.state])).toEqual([
+      ['b', 'success'],
+      ['a', 'pending'],
+      ['x', 'pending'],
+      ['y', 'pending'],
+    ])
+  })
+
+  it('keeps the current records and the newest older ones within 300', () => {
+    const store = getOrpcInspectorStore()
+    for (let i = 0; i < 10; i++)
+      store.upsert(makeCall(`new${i}`))
+    store.appendOlder(Array.from({ length: 300 }, (_, i) => makeCall(`old${i}`)))
+    expect(store.list).toHaveLength(300)
+    expect(store.list[9]?.id).toBe('new0')
+    expect(store.list[10]?.id).toBe('old0')
+    expect(store.list.at(-1)?.id).toBe('old289')
+  })
+
+  it('does not notify when nothing is appended', () => {
+    const store = getOrpcInspectorStore()
+    store.upsert(makeCall('a'))
+    const listener = vi.fn()
+    store.subscribe(listener)
+    store.appendOlder([
+      makeCall('a'),
+    ])
+    expect(listener).not.toHaveBeenCalled()
+  })
+
   it('shares the same records after a module reload', async () => {
     getOrpcInspectorStore().upsert(makeCall('a'))
     vi.resetModules()

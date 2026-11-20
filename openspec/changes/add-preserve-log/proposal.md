@@ -11,7 +11,7 @@ Records live in the page's memory, so a full reload or a document navigation emp
 - The saved copy is wrapped in a versioned envelope (`{ v: 1, ... }`). A copy with another version, or one that can't be parsed, is discarded.
 - Size limits:
   - A record whose JSON is over 64 KB is saved as a summary: everything except its input, output, stream events and error data, with a note of what was left out and how big the record was.
-  - The whole copy stays within 2,000,000 characters, well under the ~5 M character sessionStorage quota, so the app keeps room for its own data. Older records that don't fit are left out and counted.
+  - The whole copy stays within 1,000,000 characters, well under the ~5 M character sessionStorage quota, so the app keeps room for its own data. Older records that don't fit are left out and counted.
   - When the browser still refuses the write, the old copy is removed rather than left behind silently stale.
   - The toolbar shows "Partially preserved" ("部分未保存") whenever records or bodies were left out, and "Not preserved" when the write failed.
 - On a full page load (not on a return from the back/forward cache), the page script restores the saved records once:

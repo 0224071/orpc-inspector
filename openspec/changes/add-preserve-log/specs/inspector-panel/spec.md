@@ -54,7 +54,7 @@ When a restored record was saved as a summary, the details SHALL show, in place 
 - **THEN** the Response part says the output was not preserved because the record was over 64 KB, with its size
 
 ### Requirement: Previous-page records in copied reports
-A copied report SHALL mark a record restored from a previous page in its request line, as `(client · from a previous page)` or `(SSR · from a previous page)`, under the Request section. A record in state `unknown` SHALL be titled `Outcome unknown (page left before the call finished)`. A left-out part SHALL read `(not preserved: <size>, over the 64 KB limit)` in place of its value.
+A copied report SHALL mark a record restored from a previous page in its request line, as `(Client · from a previous page)` or `(SSR · from a previous page)`, under the Request section. A record in state `unknown` SHALL be titled `Outcome unknown (page left before the call finished)`. A left-out part SHALL read `(not preserved: <size>, over the 64 KB limit)` in place of its value.
 
 #### Scenario: Copy a restored error
 - **WHEN** a restored `auth.login` record with state `error` is copied with the built-in Markdown template

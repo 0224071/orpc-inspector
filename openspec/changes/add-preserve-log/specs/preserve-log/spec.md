@@ -71,7 +71,7 @@ The saved copy SHALL replace with `***` the values of headers whose names match 
 - **THEN** the saved copy holds `accessToken: "xyz"` unchanged
 
 ### Requirement: Size limits of the saved copy
-A record whose JSON is over 65,536 characters SHALL be saved as a summary: every field except input, output, stream events and error data, with a note naming the left-out fields that held data and the record's size. The whole saved copy SHALL stay within 2,000,000 characters: records are added newest first, a record that doesn't fit is tried as a summary, and when its summary doesn't fit either, it and all older records are left out and counted.
+A record whose JSON is over 65,536 characters SHALL be saved as a summary: every field except input, output, stream events and error data, with a note naming the left-out fields that held data and the record's size. The whole saved copy SHALL stay within 1,000,000 characters: records are added newest first, a record that doesn't fit is tried as a summary, and when its summary doesn't fit either, it and all older records are left out and counted.
 
 #### Scenario: One large response
 - **WHEN** Preserve log is on and a call returns a 1 MB output
@@ -82,8 +82,8 @@ A record whose JSON is over 65,536 characters SHALL be saved as a summary: every
 - **THEN** the saved summary has no events and keeps the event count 400
 
 #### Scenario: Over the total
-- **WHEN** the store's records, saved as summaries where needed, would take 2,400,000 characters
-- **THEN** the saved copy is at most 2,000,000 characters, the newest records are the ones saved, and the number of left-out records is recorded
+- **WHEN** the store's records, saved as summaries where needed, would take 1,200,000 characters
+- **THEN** the saved copy is at most 1,000,000 characters, the newest records are the ones saved, and the number of left-out records is recorded
 
 ### Requirement: No stale copy after a failed write
 When the browser refuses a write, the system SHALL retry once with every record as a summary. When that also fails, it SHALL remove the previous saved records, so that a reload never shows an older copy as if it were current, and SHALL report the failure to the panel with the number of records not saved.

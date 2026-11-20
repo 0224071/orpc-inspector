@@ -10,6 +10,13 @@ See proposal.md for motivation; the requirements are in the delta specs. This de
 - Client records on the dev server keep header values; the panel masks them on display. SSR records and client records in opted-in production builds have sensitive headers replaced with `***` at record time (`toHeaderRecord`, `maskDataHeaders`), and the panel offers no reveal for them.
 - Panel settings live in the panel iframe's localStorage. The page script can't read them synchronously at load, before the panel exists.
 
+Checked against `main` after both merged (v0.2.0):
+
+- The package moved to `packages/orpc-inspector/`. Paths in this design and in tasks.md are relative to it.
+- The published state is `{ calls, order }`; `cancelled`, `attempts[].eventsBefore` and the events view (`panel/stream-view.ts`) are in place, as assumed above.
+- An `orpc-inspector/v2` entry for oRPC 2.0 records into the same store with the same record shape, so Preserve log covers it with no extra work.
+- In Nuxt, the page script starts when the client plugin imports it, and the plugin hydrates SSR records afterwards. The restore therefore runs before Nuxt's SSR hydration. SSR records still land before restored ones (the store puts new records first). For the id rule ("the current document's version wins"), `hydrateOrpcInspector` replaces a record with the same id when that record came from a previous page, instead of skipping it.
+
 Evidence from the maintainer's experiments with a throwaway prototype in Chromium (not in the repo; E4 for saving and restoring, E5 for schema extension):
 
 | Saved content | Characters | Write (stringify + setItem) |
@@ -92,12 +99,23 @@ Confirmed by the maintainer in review.
 - The write happens in the page script's own scheduling and never inside the store's synchronous listener path, so a slow write never delays a call's result.
 - Every storage access is wrapped. An exception never reaches the app.
 
-### Size: 64 KB per record, 2,000,000 characters in total
+### Size: 64 KB per record, 1,000,000 characters in total
 
 - **Per record.** A record whose JSON is over 65,536 characters is saved as a summary: every field except `input`, `output`, `events` and `error.data`, plus `notPreserved: { fields, size }` naming the fields that held data and the record's full size in characters. `eventCount` and `attempts[].eventsBefore` stay, so the panel can still say how many events there were.
-- **Total.** The list is filled newest first. When the next record doesn't fit in full it is tried as a summary, and when the summary doesn't fit either, it and every older record are left out and added to `dropped`. 2,000,000 characters is about 40 % of Chromium's ~5 M character per-origin quota, which leaves the rest to the app. At E4's rate (3.25 M characters in ~27 ms) a full copy writes in about 16 ms.
+- **Total.** The list is filled newest first. When the next record doesn't fit in full it is tried as a summary, and when the summary doesn't fit either, it and every older record are left out and added to `dropped`. 1,000,000 characters is about 20 % of Chromium's ~5 M character per-origin quota, which leaves the rest to the app. The budget was 2,000,000 until the benchmark gate below failed; the maintainer then chose to halve it rather than save summaries by default, so bodies stay in the saved copy.
 - **Quota.** If `setItem` still throws (the app's own data filled the origin), the writer retries once with every record as a summary. If that fails too, it removes the records key and writes a small envelope `{ v: 1, list: [], dropped: <count> }`, then reports the failure. E4 showed a failed `setItem` leaves the previous value in place, so without the removal a reload would quietly show an older list.
 - **Benchmark gate (the stop-loss condition set during planning).** Before the panel work, measure one save (fit, mask, stringify, `setItem`) in Chromium with a store holding about 5 MB of records: 300 × ~16 KB, and 295 typical + 5 × 1 MB. If any single save takes over 30 ms, the default becomes summaries for every record. That changes this design and the specs, so it goes back to the maintainer before implementation continues.
+
+**Gate result (2026-11-20, headless Chromium 157, Windows; `serializeLog` plus `setItem`, 7 runs each, two page loads):**
+
+| Store | Saved copy | First save (empty cache) | Next save (one record changed) |
+|---|---|---|---|
+| 300 × ~16 KB (5.0 M characters) | 2.0 M characters: 119 full, 12 summaries, 169 left out | 11–24 ms | 21–35 ms |
+| 295 × ~1 KB + 5 × 1 MB (5.4 M characters) | 0.38 M characters, 5 summaries | 8–20 ms | 5–6 ms |
+
+`setItem` alone, replacing an existing value: 0.5 M characters 6–8 ms, 1 M 9–14 ms, 1.5 M 13–20 ms, 2 M 20–26 ms. The time follows the size of the saved copy, not the serialization (the cache already makes unchanged records free). **The gate failed:** a copy near the 2 M budget takes 33–35 ms per save. The maintainer chose the 1,000,000-character budget measured below.
+
+Measured alternative, a 1,000,000-character budget (same tab, alternating with the 2 M build, two rounds): 300 × ~16 KB saves 1.0 M characters (about 60 full, 20 summaries, 221 left out) in 9–13 ms first and 13–21 ms next; 295 × ~1 KB + 5 × 1 MB is unchanged by the budget at 10–24 ms first and 4–7 ms next. The 2 M build in the same rounds: 22–27 ms first, 30–35 ms next. A single run right after opening the tab was 2–6 times slower for both builds and is left out as an outlier.
 
 `dropped` is cumulative across pages: a restored envelope's `dropped` is carried into the new page and added to what its own saves leave out, so "Partially preserved" stays visible after a reload until the user clears. Records pushed out by the store's 300-record limit are not counted; that limit applies with or without Preserve log.
 
@@ -155,6 +173,8 @@ So `OrpcCallState` gains `unknown`:
 
 Only restore sets it; the recorder never does.
 
+Found during the Chromium checks: on a reload, Chromium cancels the page's pending `fetch` as the new document commits, and the call fails with `TypeError: Failed to fetch` (no status) just before `pagehide`. Saved as is, it came back as an error. The saver therefore remembers the last pending or streaming version of each record. When the page is hidden, a record that failed in the transport with no response (`TypeError` or `AbortError`, no status) within the last 1,000 ms is saved as that earlier version, so it comes back as `unknown`. The record in memory is not changed, and a failure further back stays an error. A stream cut by a navigation was already saved as `streaming` in the same check.
+
 Confirmed by the maintainer in review.
 
 ### Marking records from a previous page
@@ -162,7 +182,7 @@ Confirmed by the maintainer in review.
 - `OrpcCall.fromPreviousPage?: true` is set at restore and kept through later saves, so a record two navigations back is still marked.
 - The row shows a tag: "Previous page" / "前一頁".
 - The details show "From a previous page" / "來自前一個頁面".
-- Copied reports are in English. The request line's marker reads `(client · from a previous page)`, next to the existing `client` / `SSR` and `not sent` markers, under the Request section toggle. The errors report shows the same marker.
+- Copied reports are in English. The request line's marker reads `(Client · from a previous page)`, next to the existing `Client` / `SSR` and `not sent` markers, under the Request section toggle. The errors report shows the same marker.
 - The errors report's duplicate grouping key includes the mark, so an error from the previous page and the same error on this page are listed separately rather than merged under one of them.
 - `notPreserved` fields read `(not preserved: 120 KB, over the 64 KB limit)` in the details and in reports, in place of the body, events or error data.
 
@@ -190,16 +210,16 @@ Confirmed by the maintainer in review.
 ## Risks / Trade-offs
 
 - [Request data in sessionStorage] → Off by default, remembered per tab only, headers masked. The rest is documented, and turning it off or clearing deletes the copy at once.
-- [The app's own sessionStorage use plus the 2 M budget can exceed the quota] → The app's writes come first in practice (ours are deferred), our writes fail safely, and the toolbar says so. The budget may need lowering if users report it.
+- [The app's own sessionStorage use plus the 1 M budget can exceed the quota] → The app's writes come first in practice (ours are deferred), our writes fail safely, and the toolbar says so. The budget may need lowering if users report it.
 - [A page restored from the back/forward cache saves its own store and replaces records made on the page the user came back from] → Restoring on `pageshow` was ruled out. Its records are the page's own, and a return is the user's own navigation. Documented in the guide.
 - [Two apps on one origin in the same tab restore each other's records] → Rare in dev. Documented. A per-app key needs an app id the page script doesn't have today. Confirmed by the maintainer in review: no separation, documented only.
 - [`unknown` is a new member of an exported union] → Additive; code with an exhaustive switch over `OrpcCallState` gains a case. Called out in the release notes.
 - [Up to one second of changes can be lost if the tab crashes] → A navigation or reload flushes on `pagehide`. A crash is not the case this feature serves.
-- [Saving costs main-thread time on large stores] → Changed-records-only serialization, at most one write a second, the 2 M budget and the 30 ms benchmark gate.
+- [Saving costs main-thread time on large stores] → Changed-records-only serialization, at most one write a second, the 1 M budget and the 30 ms benchmark gate.
 
 ## Open Questions
 
-- If the benchmark gate fails, whether summaries-for-all should be the default or a second toggle ("Preserve bodies") is needed. The maintainer chose to decide only if the gate fails.
+Resolved: the benchmark gate failed at the 2,000,000-character budget. The maintainer chose a 1,000,000-character budget over summaries by default or a second toggle (see Size).
 
 Resolved: #2 and #5 come later as their own change (confirmed by the maintainer in review). They are not in this change's scope; the no-whitelist save rule keeps the saved format unchanged when they land.
 
@@ -224,10 +244,10 @@ Decision points are numbered as on the review page. All twelve were confirmed by
 | Save at most once a second, flush on `pagehide` and `visibilitychange` | design: Saving | source (continuous saving plus a flush on leaving, issue #3); interval agent | implementation |
 | Per-record cache of the saved form | design: Saving | agent | implementation |
 | 64 KB per-record summary and which fields it keeps | design: Size | source (limit); agent (fields) | implementation |
-| 2,000,000-character total budget, newest first, dropped count | design: Size | agent | decision point 2, confirmed |
+| Total budget, newest first, dropped count (2,000,000 characters at review, 1,000,000 after the gate failed) | design: Size | agent | decision point 2, confirmed; budget changed by the maintainer after the gate |
 | Quota fallback: summaries only, then remove the stale copy | design: Size | agent (no silent staleness from the pre-mortem) | decision point 2, confirmed |
 | 30 ms benchmark gate | design: Size | source | follows the source |
-| What to do if the gate fails | design: Open Questions | agent | decision point 11, confirmed |
+| What to do if the gate fails | design: Open Questions | agent | decision point 11, confirmed; the gate failed and the maintainer chose the 1,000,000-character budget |
 | Headers masked like SSR records; bodies unmasked | design: Masking | source | follows the source |
 | Default sensitive pattern, not the template's | design: Masking | agent | decision point 5, confirmed |
 | Restore once at load; none on `pageshow` | design: Restore | source | follows the source |

@@ -2,6 +2,7 @@ import type { OrpcCall, OrpcHeaders } from '../src/core/types'
 import type { IssueGroup } from './group-issues'
 import { isSensitiveKey, MASK, maskSensitive } from '../src/core/mask'
 import { groupIssues } from './group-issues'
+import { notPreservedSize, RECORD_LIMIT_TEXT, responseField } from './preserved'
 import { eventsByAttempt } from './stream-view'
 
 export { DEFAULT_MASK_PATTERN, isValidMaskPattern, maskSensitive } from '../src/core/mask'
@@ -86,6 +87,7 @@ const STATE_TITLE: Record<OrpcCall['state'], [emoji: string, text: string]> = {
   error: ['⚠️', 'Error'],
   invalid: ['❌', 'Response does not match schema'],
   cancelled: ['⏹️', 'Cancelled'],
+  unknown: ['❔', 'Outcome unknown (page left before the call finished)'],
 }
 
 function stateTitle(call: OrpcCall): [emoji: string, text: string] {
@@ -354,6 +356,11 @@ function attemptsText(call: OrpcCall) {
   return `${attempts.length} (${attempts.map(attempt => attempt.status ?? 'no response').join(' → ')})`
 }
 
+/** Stands in for a body Preserve log left out of a large record */
+function notPreservedText(size: string) {
+  return `(not preserved: ${size}, over the ${RECORD_LIMIT_TEXT} limit)`
+}
+
 /** `Events (150, last 100)` */
 function eventsLabel(call: OrpcCall) {
   const total = call.eventCount ?? 0
@@ -366,9 +373,11 @@ function eventsLabel(call: OrpcCall) {
 function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
   const r = createRenderer(options.syntax)
   const { sections } = options
-  const side = call.side === 'ssr'
+  const side = `${call.side === 'ssr'
     ? 'SSR'
-    : 'Client'
+    : 'Client'}${call.fromPreviousPage
+    ? ' · from a previous page'
+    : ''}`
   const request = [call.method, call.url ?? call.procedure].filter(Boolean).join(' ')
   const status = call.status === undefined
     ? ''
@@ -416,21 +425,33 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
   if (requestHeaders) {
     parts.push(r.plain('Request headers', requestHeaders))
   }
-  if (sections.input && call.input !== undefined) {
+  const inputLeftOut = notPreservedSize(call, 'input')
+  if (sections.input && inputLeftOut) {
+    parts.push(r.field('Input', notPreservedText(inputLeftOut)))
+  }
+  else if (sections.input && call.input !== undefined) {
     parts.push(r.block('Input', jsonText(input, options), false))
   }
   const responseHeaders = sections.responseHeaders && headersText(call.responseHeaders, options)
   if (responseHeaders) {
     parts.push(r.plain('Response headers', responseHeaders))
   }
-  if (sections.output && output !== undefined) {
-    const label = showsErrorData(call)
-      ? 'Error data'
-      : 'Response'
-    // Success reports are for backend devs to read the data, so keep it expanded
-    parts.push(r.block(label, jsonText(output, options), call.state !== 'success'))
+  const outputLabel = showsErrorData(call)
+    ? 'Error data'
+    : 'Response'
+  const outputLeftOut = notPreservedSize(call, responseField(call))
+  if (sections.output && outputLeftOut) {
+    parts.push(r.field(outputLabel, notPreservedText(outputLeftOut)))
   }
-  if (sections.output && call.eventCount !== undefined) {
+  else if (sections.output && output !== undefined) {
+    // Success reports are for backend devs to read the data, so keep it expanded
+    parts.push(r.block(outputLabel, jsonText(output, options), call.state !== 'success'))
+  }
+  const eventsLeftOut = notPreservedSize(call, 'events')
+  if (sections.output && eventsLeftOut) {
+    parts.push(r.field(`Events (${call.eventCount ?? 0})`, notPreservedText(eventsLeftOut)))
+  }
+  else if (sections.output && call.eventCount !== undefined) {
     const events = maskSensitive(eventsByAttempt(call) ?? call.events ?? [], options.maskPattern)
     parts.push(r.block(eventsLabel(call), jsonText(events, options), call.state !== 'success'))
   }
@@ -531,7 +552,7 @@ export function buildCallReport(
   })
 }
 
-/** Calls with the same procedure, state, and issues or error message count as duplicates */
+/** Calls with the same procedure, state, and issues or error message count as duplicates; one from a previous page never merges with one from this page */
 function duplicateKey(call: OrpcCall) {
   const detail = call.issues?.length
     ? groupIssues(call.issues).map(group => `${group.path}\n${group.message}`)
@@ -543,6 +564,7 @@ function duplicateKey(call: OrpcCall) {
     call.issuesSource,
     call.status,
     detail,
+    call.fromPreviousPage ?? false,
   ])
 }
 

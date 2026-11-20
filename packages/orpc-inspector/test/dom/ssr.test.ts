@@ -76,6 +76,23 @@ describe('hydrateOrpcInspector', () => {
     expect(getOrpcInspectorStore().list.map(call => call.id)).toEqual(['ssr-2', 'ssr-1'])
   })
 
+  it('replaces a record with the same id restored from a previous page, as Nuxt hydrates after the restore', () => {
+    getOrpcInspectorStore().appendOlder([
+      makeCall('ssr-1', { fromPreviousPage: true, state: 'unknown' }),
+      makeCall('old'),
+    ])
+    hydrateOrpcInspector([
+      makeCall('ssr-1'),
+      makeCall('ssr-2'),
+    ])
+
+    expect(getOrpcInspectorStore().list.map(call => [call.id, call.state, call.fromPreviousPage])).toEqual([
+      ['ssr-2', 'success', undefined],
+      ['ssr-1', 'success', undefined],
+      ['old', 'success', undefined],
+    ])
+  })
+
   it('leaves the store untouched when there is no data', () => {
     hydrateOrpcInspector(undefined)
     hydrateOrpcInspector([])

@@ -16,6 +16,15 @@ export const en = {
   'toolbar.copyErrors': 'Copy error report {count}',
   'toolbar.clear': 'Clear',
   'toolbar.settings': 'Settings',
+  'toolbar.preserveLog': 'Preserve log',
+  'toolbar.preserveLogHint': 'Keep calls across reloads and navigations in this tab. They are saved in sessionStorage for this tab, with sensitive headers masked; bodies are saved as they are.',
+  'toolbar.preserveLogUnavailable': 'Unavailable: this page cannot use sessionStorage',
+  'toolbar.partiallyPreserved': 'Partially preserved',
+  'toolbar.notPreserved': 'Not preserved: storage is full',
+  'toolbar.droppedOne': '{count} call left out',
+  'toolbar.droppedMany': '{count} calls left out',
+  'toolbar.summarizedOne': '{count} call saved without its body',
+  'toolbar.summarizedMany': '{count} calls saved without their bodies',
 
   'state.pending': 'Pending',
   'state.streaming': 'Streaming',
@@ -23,6 +32,7 @@ export const en = {
   'state.error': 'Error',
   'state.invalid': 'Invalid',
   'state.cancelled': 'Cancelled',
+  'state.unknown': 'Outcome unknown',
 
   'panel.waiting': 'Waiting for the page to connect…',
   'panel.causesHeading': 'Likely causes:',
@@ -47,6 +57,7 @@ export const en = {
   'call.serverTag': 'Server',
   'call.responseTag': 'Response',
   'call.client': 'Client',
+  'call.previousPage': 'Previous page',
 
   'issues.inputHeadingOne': 'Input does not match schema ({count} issue)',
   'issues.inputHeadingMany': 'Input does not match schema ({count} issues)',
@@ -78,6 +89,9 @@ export const en = {
   'detail.eventsKept': 'showing the last {kept}',
   'detail.noEvents': '(no events)',
   'detail.reconnect': 'Reconnected · attempt {attempt}',
+  'detail.fromPreviousPage': 'From a previous page',
+  'detail.outcomeUnknown': 'The page was left before this call finished, so its outcome is unknown.',
+  'detail.notPreserved': '(not preserved: {size}, over the {limit} limit)',
 
   'headers.maskedAtRecord': 'Masked when recorded',
   'headers.reveal': 'Show original value',
@@ -219,6 +233,15 @@ const zhTW: Record<MessageKey, string> = {
   'toolbar.copyErrors': '複製錯誤報告 {count}',
   'toolbar.clear': '清除',
   'toolbar.settings': '設定',
+  'toolbar.preserveLog': '保留紀錄',
+  'toolbar.preserveLogHint': '在這個分頁重新整理或換頁後保留呼叫紀錄。紀錄存在分頁的 sessionStorage，敏感 headers 會遮罩，內容照原樣保存。',
+  'toolbar.preserveLogUnavailable': '無法使用：這個頁面不能使用 sessionStorage',
+  'toolbar.partiallyPreserved': '部分未保存',
+  'toolbar.notPreserved': '未保存：儲存空間已滿',
+  'toolbar.droppedOne': '{count} 筆呼叫未保存',
+  'toolbar.droppedMany': '{count} 筆呼叫未保存',
+  'toolbar.summarizedOne': '{count} 筆呼叫未保存內容',
+  'toolbar.summarizedMany': '{count} 筆呼叫未保存內容',
 
   'state.pending': '等待中',
   'state.streaming': '串流中',
@@ -226,6 +249,7 @@ const zhTW: Record<MessageKey, string> = {
   'state.error': '錯誤',
   'state.invalid': '不符',
   'state.cancelled': '已取消',
+  'state.unknown': '結果未知',
 
   'panel.waiting': '等待頁面連線…',
   'panel.causesHeading': '可能原因：',
@@ -250,6 +274,7 @@ const zhTW: Record<MessageKey, string> = {
   'call.serverTag': '伺服器',
   'call.responseTag': '回應',
   'call.client': '用戶端',
+  'call.previousPage': '前一頁',
 
   'issues.inputHeadingOne': '輸入不符合 schema（{count} 個問題）',
   'issues.inputHeadingMany': '輸入不符合 schema（{count} 個問題）',
@@ -281,6 +306,9 @@ const zhTW: Record<MessageKey, string> = {
   'detail.eventsKept': '只顯示最後 {kept} 個',
   'detail.noEvents': '（無事件）',
   'detail.reconnect': '重新連線 · 第 {attempt} 次嘗試',
+  'detail.fromPreviousPage': '來自前一個頁面',
+  'detail.outcomeUnknown': '這筆呼叫完成前就離開了頁面，結果未知。',
+  'detail.notPreserved': '（未保存：{size}，超過 {limit} 上限）',
 
   'headers.maskedAtRecord': '紀錄時已遮罩',
   'headers.reveal': '顯示原始值',

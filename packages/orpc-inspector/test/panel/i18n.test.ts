@@ -29,6 +29,17 @@ describe('panel i18n', () => {
     expect(t('panel.copyFailed')).toBe('複製失敗')
   })
 
+  it('describes Preserve log in every language', () => {
+    expect(t('state.unknown')).toBe('Outcome unknown')
+    expect(tc('toolbar.summarized', 2)).toBe('2 calls saved without their bodies')
+    locale.value = 'zh-TW'
+    expect(t('toolbar.preserveLog')).toBe('保留紀錄')
+    expect(t('toolbar.partiallyPreserved')).toBe('部分未保存')
+    expect(t('toolbar.notPreserved')).toBe('未保存：儲存空間已滿')
+    expect(t('state.unknown')).toBe('結果未知')
+    expect(t('detail.fromPreviousPage')).toBe('來自前一個頁面')
+  })
+
   it('describes stream events and reconnects in every language', () => {
     expect(tc('detail.eventCount', 1)).toBe('1 event')
     expect(tc('detail.eventCount', 150)).toBe('150 events')

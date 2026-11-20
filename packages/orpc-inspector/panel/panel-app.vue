@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OrpcCall, OrpcCallIssue, OrpcCallsState, OrpcInspectorProtocol } from '../src/core/types'
+import type { OrpcCall, OrpcCallBodyField, OrpcCallIssue, OrpcCallsState, OrpcInspectorProtocol, OrpcPreserveLogState } from '../src/core/types'
 import type { CopyResult, CopyTarget } from './clipboard'
 import type { IssueGroup } from './group-issues'
 import type { MessageKey } from './i18n'
@@ -20,6 +20,7 @@ import IssueGroupBody from './issue-group-body.vue'
 import JsonNode from './json-node.vue'
 import { narrowView, useNarrow } from './narrow-layout'
 import { resolveLocale, usePanelSettings } from './panel-settings'
+import { notPreservedSize, RECORD_LIMIT_TEXT, responseField } from './preserved'
 import { buildCallReport, buildErrorsReport, defaultCallSections } from './report'
 import ReportMenu from './report-menu.vue'
 import { useReportTemplates } from './report-settings'
@@ -60,6 +61,41 @@ void channel.sharedState.get('calls').then((state) => {
     calls.value = toList(full)
   })
 })
+
+/** Undefined until the page shares it */
+const preserveLog = ref<OrpcPreserveLogState>()
+void channel.sharedState.get('preserveLog').then((state) => {
+  preserveLog.value = {
+    ...state.value() as OrpcPreserveLogState,
+  }
+  state.on('updated', (full) => {
+    preserveLog.value = { ...full }
+  })
+})
+
+/** Shown only while Preserve log is on and something was not saved in full */
+const preserveNote = computed(() => {
+  const value = preserveLog.value
+  if (!value?.enabled)
+    return
+  if (value.failed) {
+    return {
+      text: t('toolbar.notPreserved'),
+      title: tc('toolbar.dropped', value.dropped),
+    }
+  }
+  if (value.dropped || value.summarized) {
+    return {
+      text: t('toolbar.partiallyPreserved'),
+      title: `${tc('toolbar.dropped', value.dropped)} · ${tc('toolbar.summarized', value.summarized)}`,
+    }
+  }
+  return undefined
+})
+
+async function setPreserveLog(enabled: boolean) {
+  await channel.call('preserveLog:set', enabled)
+}
 
 const filter = ref<Filter>('all')
 const keyword = ref('')
@@ -229,8 +265,14 @@ async function jumpToIssue(group: IssueGroup, groupIndex: number) {
 const response = computed(() => selected.value && responseView(selected.value))
 const responseValue = computed(() => response.value?.value)
 const stream = computed(() => selected.value && streamView(selected.value))
+/** Placeholder for a body Preserve log left out of a large record */
+function notPreserved(field: OrpcCallBodyField) {
+  const size = selected.value && notPreservedSize(selected.value, field)
+  return size && t('detail.notPreserved', { size, limit: RECORD_LIMIT_TEXT })
+}
+const responseNotPreserved = computed(() => selected.value && notPreserved(responseField(selected.value)))
 /** A stream has no body; it shows one only for error data */
-const showBody = computed(() => !stream.value || responseValue.value !== undefined)
+const showBody = computed(() => !stream.value || responseValue.value !== undefined || !!responseNotPreserved.value)
 /** Shown only for a retried call */
 const attempts = computed(() => (selected.value?.attempts?.length ?? 0) > 1
   ? selected.value!.attempts!
@@ -243,8 +285,8 @@ const STATUS_COLOR: Partial<Record<string, string>> = {
   closed: 'bg-bad',
 }
 
-/** List dot look by call state; `invalid` shows the ≠ mark instead. Shape tells pending apart without color */
-const DOT_STYLE: Record<Exclude<OrpcCall['state'], 'invalid'>, string> = {
+/** List dot look by call state; `invalid` shows the ≠ mark and `unknown` a ? mark instead. Shape tells pending apart without color */
+const DOT_STYLE: Record<Exclude<OrpcCall['state'], 'invalid' | 'unknown'>, string> = {
   pending: 'box-border border-[1.5px] border-muted',
   streaming: 'bg-number',
   success: 'bg-ok',
@@ -277,6 +319,7 @@ const STATE_LABEL: Record<OrpcCall['state'], MessageKey> = {
   error: 'state.error',
   invalid: 'state.invalid',
   cancelled: 'state.cancelled',
+  unknown: 'state.unknown',
 }
 
 function formatTime(timestamp: number) {
@@ -435,6 +478,20 @@ async function clear() {
       <button class="clear max-sm:order-3" type="button" @click="clear">
         {{ t('toolbar.clear') }}
       </button>
+      <label
+        class="preserve-log inline-flex items-center gap-1 whitespace-nowrap max-sm:order-3"
+        :class="{ 'text-muted': !preserveLog?.available }"
+        :title="preserveLog?.available === false ? t('toolbar.preserveLogUnavailable') : t('toolbar.preserveLogHint')"
+      >
+        <input
+          type="checkbox"
+          :checked="preserveLog?.enabled ?? false"
+          :disabled="!preserveLog?.available"
+          @change="setPreserveLog(($event.target as HTMLInputElement).checked)"
+        >
+        {{ t('toolbar.preserveLog') }}
+      </label>
+      <span v-if="preserveNote" class="preserve-note text-[12px] whitespace-nowrap text-warn max-sm:order-3" :title="preserveNote.title">{{ preserveNote.text }}</span>
       <button
         class="settings max-sm:order-3 max-sm:ms-auto"
         :aria-label="t('toolbar.settings')"
@@ -498,6 +555,13 @@ async function clear() {
             :title="t(invalidReason(call)!.title)"
           >≠</span>
           <span
+            v-else-if="call.state === 'unknown'"
+            class="mark is-unknown inline-flex size-3.5 flex-none items-center justify-center rounded-[3px] border border-muted font-mono text-[11px] font-bold text-muted"
+            role="img"
+            :aria-label="t(STATE_LABEL[call.state])"
+            :title="t(STATE_LABEL[call.state])"
+          >?</span>
+          <span
             v-else
             class="dot mx-[3px] size-2 flex-none rounded-[50%]"
             :class="[`is-${call.state}`, DOT_STYLE[call.state]]"
@@ -514,6 +578,7 @@ async function clear() {
             :title="t(invalidReason(call)!.title)"
           >{{ t(invalidReason(call)!.tag) }}</span>
           <span v-if="call.side === 'ssr'" class="tag rounded-[3px] border border-border px-1 text-[10px] text-muted">SSR</span>
+          <span v-if="call.fromPreviousPage" class="tag is-previous-page rounded-[3px] border border-border px-1 text-[10px] whitespace-nowrap text-muted" :title="t('detail.fromPreviousPage')">{{ t('call.previousPage') }}</span>
           <span class="meta text-[12px] text-muted">
             {{ call.status ?? '' }}
             <template v-if="call.duration !== undefined">· {{ call.duration }}ms</template>
@@ -546,6 +611,12 @@ async function clear() {
             @settings="settingsCategory = 'reports'"
           />
         </div>
+        <p v-if="selected.fromPreviousPage" class="from-previous-page mt-2 mb-0 text-[12px] text-muted">
+          {{ t('detail.fromPreviousPage') }}
+        </p>
+        <p v-if="selected.state === 'unknown'" class="outcome-unknown mt-1 mb-0 text-[12px] text-muted">
+          {{ t('detail.outcomeUnknown') }}
+        </p>
 
         <div v-if="selected.issues?.length" class="issues mt-3 rounded-md border border-(--tone) bg-(--tone-bg) px-3 py-2 [--tone-bg:var(--bad-bg)] [--tone:var(--bad)]">
           <h3 class="mt-0 mb-1.5 text-[12px] text-(--tone)">
@@ -642,6 +713,7 @@ async function clear() {
             :path="[]"
             :value="selected.input"
           />
+          <span v-else-if="notPreserved('input')" class="not-preserved muted text-[12px] text-muted">{{ notPreserved('input') }}</span>
           <span v-else class="muted text-[12px] text-muted">{{ t('detail.none') }}</span>
         </div>
 
@@ -682,6 +754,7 @@ async function clear() {
               :path="[]"
               :value="responseValue"
             />
+            <span v-else-if="responseNotPreserved" class="not-preserved muted text-[12px] text-muted">{{ responseNotPreserved }}</span>
             <span v-else class="muted text-[12px] text-muted">{{ notSent ? t('detail.notSent') : t('detail.empty') }}</span>
           </div>
         </template>
@@ -689,7 +762,7 @@ async function clear() {
           <div class="part-row mt-2 mb-1 flex items-center gap-1.5">
             <span class="part text-[12px] font-semibold">{{ t('detail.events') }}</span>
             <span class="event-count text-[11px] text-muted">
-              {{ tc('detail.eventCount', stream.total) }}<template v-if="stream.kept < stream.total">
+              {{ tc('detail.eventCount', stream.total) }}<template v-if="stream.kept < stream.total && !notPreserved('events')">
                 · {{ t('detail.eventsKept', { kept: stream.kept }) }}
               </template>
             </span>
@@ -708,7 +781,10 @@ async function clear() {
                 <JsonNode :ctx="eventContext" :name="entry.position" :path="[entry.position - 1]" :value="entry.value" />
               </li>
             </template>
-            <li v-if="!stream.entries.length" class="muted px-2.5 text-[12px] text-muted">
+            <li v-if="notPreserved('events')" class="not-preserved muted px-2.5 text-[12px] text-muted">
+              {{ notPreserved('events') }}
+            </li>
+            <li v-else-if="!stream.entries.length" class="muted px-2.5 text-[12px] text-muted">
               {{ t('detail.noEvents') }}
             </li>
           </ol>

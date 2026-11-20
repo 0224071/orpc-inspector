@@ -733,3 +733,101 @@ describe('attempts and stream events', () => {
     expect(buildCallReport(failedStream, markdown, { output: false })).not.toContain('Events')
   })
 })
+
+describe('records from a previous page', () => {
+  const merging = {
+    ...discord,
+    omit: { ...discord.omit, mergeDuplicates: true },
+  }
+  const login: OrpcCall = {
+    id: 'l1',
+    procedure: 'auth.login',
+    method: 'POST',
+    url: '/rpc/auth/login',
+    status: 401,
+    side: 'client',
+    state: 'error',
+    startedAt: 0,
+    error: { name: 'ORPCError', code: 'UNAUTHORIZED', message: 'Unauthorized' },
+  }
+
+  it('marks the request line of a restored record', () => {
+    const text = buildCallReport({ ...login, fromPreviousPage: true }, markdown)
+    expect(text).toContain('- **Request**: POST /rpc/auth/login → 401 (Client · from a previous page)')
+    expect(buildCallReport({ ...invalidCall, fromPreviousPage: true }, markdown)).toContain('(SSR · from a previous page)')
+  })
+
+  it('titles an unfinished call as outcome unknown', () => {
+    const text = buildCallReport({
+      ...login,
+      state: 'unknown',
+      status: undefined,
+      error: undefined,
+      fromPreviousPage: true,
+    }, markdown)
+    expect(text).toContain('### ❔ Outcome unknown (page left before the call finished) — `auth.login`')
+  })
+
+  it('writes a placeholder for a body left out of a large record', () => {
+    const summary: OrpcCall = {
+      ...login,
+      state: 'success',
+      status: 200,
+      error: undefined,
+      fromPreviousPage: true,
+      notPreserved: {
+        fields: ['input', 'output'],
+        size: 120 * 1024,
+      },
+    }
+    const text = buildCallReport(summary, markdown, { input: true, output: true })
+    expect(text).toContain('- **Input**: (not preserved: 120 KB, over the 64 KB limit)')
+    expect(text).toContain('- **Response**: (not preserved: 120 KB, over the 64 KB limit)')
+  })
+
+  it('writes a placeholder for left-out error data and events', () => {
+    const text = buildCallReport({
+      ...login,
+      eventCount: 400,
+      notPreserved: {
+        fields: ['events', 'error.data'],
+        size: 70 * 1024,
+      },
+    }, markdown, { output: true })
+    expect(text).toContain('- **Error data**: (not preserved: 70 KB, over the 64 KB limit)')
+    expect(text).toContain('- **Events (400)**: (not preserved: 70 KB, over the 64 KB limit)')
+  })
+
+  it('lists the same error before and after a navigation separately', () => {
+    const text = buildErrorsReport([
+      { ...login, id: 'l2' },
+      { ...login, fromPreviousPage: true },
+    ], merging)
+    expect(text.match(/### /g)).toHaveLength(2)
+    expect(text.match(/from a previous page/g)).toHaveLength(1)
+    expect(text).not.toContain('Same error ×2')
+  })
+
+  it('leaves records whose outcome is unknown out of the errors report', () => {
+    const text = buildErrorsReport([
+      {
+        ...login,
+        id: 'u',
+        state: 'unknown',
+        error: undefined,
+        fromPreviousPage: true,
+      },
+      login,
+    ], markdown)
+    expect(text.startsWith('## oRPC error report (1 calls)')).toBe(true)
+    expect(text).not.toContain('Outcome unknown')
+  })
+
+  it('reports records without the new fields as before', () => {
+    expect(buildCallReport(errorCall, markdown)).not.toContain('previous page')
+    expect(buildErrorsReport([
+      errorCall,
+      { ...errorCall, id: '9' },
+    ], merging)).toContain('Same error ×2')
+  })
+})

@@ -1,7 +1,7 @@
 import type { OrpcCall, OrpcCallError, OrpcCallIssue } from './types'
 import { ORPCError } from '@orpc/client'
 import { ValidationError } from '@orpc/contract'
-import { toHeaderRecord } from './headers'
+import { maskDataHeaders } from './headers'
 import { ISSUE_PARAM_KEYS } from './types'
 
 /** Converts to plain data that can be structured-cloned / serialized into the payload */
@@ -98,21 +98,6 @@ function serverIssues(error: ORPCError<string, unknown>): IssueLike[] | undefine
   return valid
     ? issues as IssueLike[]
     : undefined
-}
-
-/** When the backend returns a non-oRPC error, data carries the raw response headers */
-function maskDataHeaders(data: unknown): unknown {
-  if (!data || typeof data !== 'object' || !('headers' in data)) {
-    return data
-  }
-  const { headers } = data
-  if (!headers || typeof headers !== 'object') {
-    return data
-  }
-  return {
-    ...data,
-    headers: toHeaderRecord(headers as Record<string, string | string[]>, true),
-  }
 }
 
 interface ResponseLike {

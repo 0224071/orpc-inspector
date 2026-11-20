@@ -10,8 +10,11 @@ export const ORPC_INSPECTOR_PANEL_ROUTE = '/__orpc-inspector/'
 /** Window variable holding SSR records, read when the page script starts */
 export const ORPC_INSPECTOR_SSR_GLOBAL = '__ORPC_INSPECTOR_SSR__'
 
-/** streaming: event iterator is being consumed; cancelled: the consumer stopped early or the call's signal was aborted */
-export type OrpcCallState = 'pending' | 'streaming' | 'success' | 'error' | 'invalid' | 'cancelled'
+/**
+ * streaming: event iterator is being consumed; cancelled: the consumer stopped early or the call's signal was aborted;
+ * unknown: restored by Preserve log from a page left while the call was pending or streaming; the recorder never sets it
+ */
+export type OrpcCallState = 'pending' | 'streaming' | 'success' | 'error' | 'invalid' | 'cancelled' | 'unknown'
 
 /** zod issue parameters kept so zod locales can rebuild the message; flat, mirroring zod issue fields */
 export const ISSUE_PARAM_KEYS = [
@@ -108,6 +111,32 @@ export interface OrpcCall {
   events?: unknown[]
   /** Total number of events received by the event iterator */
   eventCount?: number
+  /** Set by Preserve log on records restored from an earlier page in the tab; kept through later saves */
+  fromPreviousPage?: true
+  /** Set by Preserve log when a large record was saved as a summary: the left-out fields that held data and the record's size */
+  notPreserved?: OrpcCallNotPreserved
+}
+
+/** Fields a Preserve log summary leaves out */
+export type OrpcCallBodyField = 'input' | 'output' | 'events' | 'error.data'
+
+export interface OrpcCallNotPreserved {
+  fields: OrpcCallBodyField[]
+  /** Size of the full record as JSON, in characters */
+  size: number
+}
+
+/** Preserve log setting and the result of the last save, published to the panel */
+export interface OrpcPreserveLogState {
+  enabled: boolean
+  /** False when the page can't access sessionStorage */
+  available: boolean
+  /** Records left out since the last clear, including ones carried over from earlier pages */
+  dropped: number
+  /** Records saved as summaries in the last save */
+  summarized: number
+  /** The last write was refused even with summaries only */
+  failed: boolean
 }
 
 /** Published to the panel keyed by id, so updating one record patches only that record */
@@ -123,9 +152,11 @@ export type OrpcInspectorProtocol = {
   functions: {
     pageScript: {
       'calls:clear': () => void
+      'preserveLog:set': (enabled: boolean) => void
     }
   }
   sharedStates: {
     calls: OrpcCallsState
+    preserveLog: OrpcPreserveLogState
   }
 }

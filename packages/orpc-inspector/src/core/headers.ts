@@ -22,3 +22,18 @@ export function toHeaderRecord(
   }
   return record
 }
+
+/** When the backend returns a non-oRPC error, data carries the raw response headers */
+export function maskDataHeaders(data: unknown): unknown {
+  if (!data || typeof data !== 'object' || !('headers' in data)) {
+    return data
+  }
+  const { headers } = data
+  if (!headers || typeof headers !== 'object') {
+    return data
+  }
+  return {
+    ...data,
+    headers: toHeaderRecord(headers as Record<string, string | string[]>, true),
+  }
+}

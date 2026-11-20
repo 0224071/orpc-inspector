@@ -34,6 +34,24 @@ export function getOrpcInspectorStore() {
             : item))
       emit()
     },
+    /** Adds records older than every current one after them, in one update; ids already present are skipped. Returns the records added */
+    appendOlder(calls: readonly OrpcCall[]): OrpcCall[] {
+      const known = new Set(store.list.map(call => call.id))
+      const added = calls.filter((call) => {
+        if (known.has(call.id))
+          return false
+        known.add(call.id)
+        return true
+      }).slice(0, Math.max(0, MAX_CALLS - store.list.length))
+      if (added.length) {
+        store.list = [
+          ...store.list,
+          ...added,
+        ]
+        emit()
+      }
+      return added
+    },
     clear() {
       store.list = []
       emit()

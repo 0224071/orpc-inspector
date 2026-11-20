@@ -40,7 +40,7 @@ The dev server SHALL load the page script on app pages so the page's store is ex
 - **THEN** after opening the app page the panel shows call records, and the app source does not import the page script
 
 ### Requirement: Page and panel communication
-The page and panel SHALL communicate over an in-page channel, without going through the dev server and without authorization; the panel gets the full record list as read-only shared state and can call a "clear records" action.
+The page and panel SHALL communicate over an in-page channel, without going through the dev server and without authorization. The panel gets the full record list and the Preserve log status (on or off, available or not, records left out or saved without bodies, last write failed) as read-only shared state, and can call a "clear records" action and a "set Preserve log" action.
 
 #### Scenario: New call
 - **WHEN** the panel is connected and the page makes a new call
@@ -49,6 +49,10 @@ The page and panel SHALL communicate over an in-page channel, without going thro
 #### Scenario: Panel opened after calls
 - **WHEN** the panel is opened after the page already has 5 records
 - **THEN** the panel shows these 5 records right after connecting
+
+#### Scenario: Panel opened with Preserve log on
+- **WHEN** Preserve log was turned on earlier in the tab and the panel is opened after a reload
+- **THEN** the panel shows Preserve log as on right after connecting, together with the restored records
 
 ### Requirement: Register a Vite DevTools dock
 When the project enables Vite DevTools, the plugin SHALL register an iframe dock with id `orpc-inspector` and title `oRPC` pointing to the panel page; it is registered only once per dev server. The DevTools dock SHALL be the only supported way to open the panel.

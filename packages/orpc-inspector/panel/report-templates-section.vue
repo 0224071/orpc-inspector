@@ -1,29 +1,29 @@
 <script setup lang="ts">
 import type { ReportOptions } from './report'
+import type { ReportPreview } from './report-preview'
 import type { useReportTemplates } from './report-settings'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { t, tc } from './i18n'
 import ReportOptionsForm from './report-options-form.vue'
 
 const props = defineProps<{
   store: ReturnType<typeof useReportTemplates>
   /** Report generated from the options being edited, for comparison */
-  preview: (options: ReportOptions) => string
+  preview: (options: ReportOptions) => ReportPreview
 }>()
 
 const editingId = ref(props.store.lastId.value)
 const mode = ref<'quick' | 'advanced'>('quick')
+const nameInput = ref<HTMLInputElement>()
 
 const template = computed(() => props.store.find(editingId.value) ?? props.store.templates[0]!)
-const previewText = computed(() => props.preview(template.value.options))
-const overLimit = computed(
-  () =>
-    template.value.options.maxLength > 0
-    && previewText.value.length > template.value.options.maxLength,
-)
+const preview = computed(() => props.preview(template.value.options))
 
-function add() {
+async function add() {
   editingId.value = props.store.duplicate(template.value.id)
+  await nextTick()
+  nameInput.value?.focus()
+  nameInput.value?.select()
 }
 
 function remove() {
@@ -51,8 +51,8 @@ function remove() {
         {{ item.name }}
         <span v-if="item.id === store.lastId.value" class="tag rounded-[3px] border border-border px-1 text-[10px] text-muted">{{ t('templates.default') }}</span>
       </button>
-      <button class="add flex items-center gap-1.5 border-dashed hover:bg-hover" :title="t('templates.duplicate')" type="button" @click="add">
-        {{ t('templates.new') }}
+      <button class="add flex items-center gap-1.5 border-dashed hover:bg-hover" type="button" @click="add">
+        {{ t('templates.duplicate') }}
       </button>
     </nav>
 
@@ -60,6 +60,7 @@ function remove() {
       <section class="editor flex flex-col gap-3 overflow-auto border-r border-r-border px-4 py-3">
         <div class="editor-head flex items-center gap-1.5">
           <input
+            ref="nameInput"
             v-model="template.name"
             class="title min-w-0 flex-1 font-semibold disabled:border-transparent"
             type="text"
@@ -97,13 +98,13 @@ function remove() {
 
       <section class="preview flex min-h-0 min-w-0 flex-col px-4 py-3">
         <div class="preview-head mb-1.5 text-[12px] text-muted">
-          {{ t('templates.preview') }}
-          <span :class="{ 'over text-bad': overLimit }">{{ tc('templates.char', previewText.length) }}</span>
+          {{ t(`templates.preview.${preview.source}`) }} ·
+          <span>{{ tc('templates.char', preview.text.length) }}</span>
           <template v-if="template.options.maxLength">
             {{ t('templates.limit', { max: template.options.maxLength }) }}
           </template>
         </div>
-        <pre class="m-0 flex-1 overflow-auto rounded-md border border-border p-2 font-mono text-[12px] whitespace-pre-wrap">{{ previewText || t('templates.noPreview') }}</pre>
+        <pre class="m-0 flex-1 overflow-auto rounded-md border border-border p-2 font-mono text-[12px] whitespace-pre-wrap">{{ preview.text }}</pre>
       </section>
     </div>
   </div>

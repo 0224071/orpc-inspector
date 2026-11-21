@@ -15,4 +15,14 @@ export const router = os.router({
       return profile
     }),
   },
+  diagnostics: {
+    stream: os.diagnostics.stream.handler(async function* ({ input }) {
+      for (let sequence = 0; sequence < input.count; sequence++)
+        yield { sequence, token: 'playground-event-token' }
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Stream failed after sending events' })
+    }),
+    retry: os.diagnostics.retry.handler(() => {
+      throw new ORPCError('SERVICE_UNAVAILABLE', { message: 'Playground service is unavailable' })
+    }),
+  },
 })

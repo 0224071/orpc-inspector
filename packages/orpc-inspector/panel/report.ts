@@ -69,6 +69,7 @@ export interface ReportOmit {
 export type ReportIssueMessage = 'original' | 'translated' | 'both'
 
 export interface ReportOptions {
+  layout?: 'classic' | 'diagnostic'
   syntax: ReportSyntax
   sections: ReportSections
   omit: ReportOmit
@@ -264,7 +265,7 @@ function formatValue(value: unknown, options: ReportOptions, r: Renderer) {
     : json)
 }
 
-function issueMessage(group: IssueGroup, choice: ReportIssueMessage) {
+function issueMessage(group: Pick<IssueGroup, 'message' | 'translatedMessage'>, choice: ReportIssueMessage) {
   const translated = group.translatedMessage
   if (!translated || choice === 'original') {
     return group.message
@@ -343,9 +344,11 @@ function headersText(headers: OrpcHeaders | undefined, options: ReportOptions) {
     : undefined
 }
 
-function jsonText(value: unknown, options: ReportOptions) {
+type RenderOptions = ReportOptions & { compactJson?: boolean }
+
+function jsonText(value: unknown, options: RenderOptions) {
   const trimmed = trimJson(value, options.omit.maxArrayItems, options.omit.maxStringLength)
-  return JSON.stringify(trimmed, null, 2) ?? 'undefined'
+  return JSON.stringify(trimmed, null, options.compactJson ? undefined : 2) ?? 'undefined'
 }
 
 /** `3 (503 → 503 → 200)`; undefined for a call with one attempt or none */
@@ -370,7 +373,44 @@ function eventsLabel(call: OrpcCall) {
     : `Events (${total})`
 }
 
-function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
+function diagnosticFields(
+  call: OrpcCall,
+  options: ReportOptions,
+  r: Renderer,
+  sent: boolean,
+) {
+  const { sections } = options
+  const issue = call.issues?.[0]
+  const error = call.error
+  const evidence = issue
+    ? `${r.code(issue.path.join('.') || '(root)')}: ${issueMessage(issue, options.issueMessage)}`
+    : error && `${error.code ?? error.name}: ${error.message}`
+  const oneLine = evidence && evidence.replaceAll(/\s+/g, ' ').trim()
+  const context = call.side === 'ssr'
+    ? ' during SSR'
+    : ' via the client'
+  const followThrough = call.eventCount !== undefined
+    ? ' Consume the stream to observe its outcome.'
+    : (call.attempts?.length ?? 0) > 1
+        ? ' Use the same retry settings.'
+        : ''
+  const input = !sections.input
+    ? 'Input is not included.'
+    : notPreservedSize(call, 'input')
+      ? 'Input was not preserved.'
+      : call.input === undefined
+        ? 'No input was captured.'
+        : 'Use the Input below as a starting point; it may be masked or shortened.'
+  return [
+    sections.issues && oneLine && r.field('Failure', oneLine.length > 160
+      ? `${oneLine.slice(0, 160)}…`
+      : oneLine),
+    sections.request && (call.state === 'error' || call.state === 'invalid')
+    && r.field('Reproduce', `Invoke the procedure${context}.${followThrough} ${sent ? '' : 'The original was blocked before send. '}${input}`),
+  ]
+}
+
+function renderCall(call: OrpcCall, options: RenderOptions, repeat = 1) {
   const r = createRenderer(options.syntax)
   const { sections } = options
   const side = `${call.side === 'ssr'
@@ -380,7 +420,9 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
     : ''}`
   const request = [call.method, call.url ?? call.procedure].filter(Boolean).join(' ')
   const status = call.status === undefined
-    ? ''
+    ? options.layout === 'diagnostic'
+      ? ' → no HTTP status'
+      : ''
     : ` → ${call.status}`
   const duration = call.duration === undefined
     ? ''
@@ -399,6 +441,9 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
     && r.field('Request', sent
       ? `${request}${status} (${side})`
       : `${request} (not sent · ${side})`),
+    ...(options.layout === 'diagnostic'
+      ? diagnosticFields(call, options, r, sent)
+      : []),
     sections.request && attempts && r.field('Attempts', attempts),
     sections.time && r.field('Time', `${formatDateTime(call.startedAt)}${duration}`),
     sections.repeat && repeat > 1 && r.field('Repeats', `Same error ×${repeat} (showing the first)`),
@@ -459,6 +504,7 @@ function renderCall(call: OrpcCall, options: ReportOptions, repeat = 1) {
 }
 
 const TRUNCATED = '\n…(truncated; raise the length limit or copy as Markdown)'
+const EVIDENCE_OMITTED = '\n\n…Evidence omitted to fit the length limit.'
 
 function truncate(text: string, limit: number) {
   let cut = text.slice(0, Math.max(0, limit - TRUNCATED.length - 4))
@@ -475,17 +521,28 @@ function truncate(text: string, limit: number) {
 
 /** Over the limit, degrade in order: drop headers → response → input → fewer issues → fewer calls → truncate */
 function fitLength(
-  render: (options: ReportOptions, calls: number) => string,
+  render: (options: RenderOptions, calls: number) => string,
   options: ReportOptions,
   meta: { calls: number, issues: number },
 ) {
-  let current = options
+  let current: RenderOptions = options
   let calls = meta.calls
   let text = render(current, calls)
   const limit = options.maxLength
-  const fits = () => (text = render(current, calls)).length <= limit
+  const diagnostic = options.layout === 'diagnostic'
+  let dropped = false
+  const fits = () => (text = render(current, calls) + (diagnostic && dropped
+    ? EVIDENCE_OMITTED
+    : '')).length <= limit
   if (!limit || text.length <= limit) {
     return text
+  }
+  if (diagnostic) {
+    current = { ...current, compactJson: true }
+    if (fits()) {
+      return text
+    }
+    dropped = true
   }
 
   for (const key of [
@@ -521,7 +578,7 @@ function fitLength(
       return text
     }
   }
-  return truncate(text, limit)
+  return truncate(render(current, calls), limit)
 }
 
 const issueCount = (call: OrpcCall) => groupIssues(call.issues ?? []).length
@@ -589,7 +646,7 @@ export function buildErrorsReport(calls: OrpcCall[], options: ReportOptions): st
   ]
   const r = createRenderer(options.syntax)
 
-  const render = (o: ReportOptions, count: number) => {
+  const render = (o: RenderOptions, count: number) => {
     const parts = list.slice(0, count).map(entry => renderCall(entry.call, o, entry.repeat))
     const omitted = list.slice(count).reduce((sum, entry) => sum + entry.repeat, 0)
     const text = [

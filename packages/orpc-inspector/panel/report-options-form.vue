@@ -123,6 +123,13 @@ const maskValid = computed(() => isValidMaskPattern(options.value.maskPattern))
 </script>
 
 <template>
+  <label class="number flex items-center justify-between gap-2">
+    <span>{{ t('options.layout') }}</span>
+    <select v-model="options.layout" class="min-w-0 rounded-sm border border-border bg-bg px-1.5 py-0.5 text-inherit [font:inherit]">
+      <option value="classic">{{ t('options.layout.classic') }}</option>
+      <option value="diagnostic">{{ t('options.layout.diagnostic') }}</option>
+    </select>
+  </label>
   <div v-if="mode === 'quick'" class="quick flex flex-col gap-3">
     <div v-for="row in QUICK_ROWS" :key="row.label" class="row flex items-start gap-2">
       <span class="label w-20 flex-none pt-1 text-muted">{{ t(row.label) }}</span>

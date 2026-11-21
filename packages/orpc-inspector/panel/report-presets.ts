@@ -203,6 +203,7 @@ export interface ReportTemplate {
 
 function createOptions(syntax: string, sections: string, omit: string, maxLength: number) {
   return {
+    layout: 'classic' as const,
     syntax: preset(SYNTAX_PRESETS, syntax),
     sections: preset(SECTIONS_PRESETS, sections),
     omit: preset(OMIT_PRESETS, omit),
@@ -237,8 +238,11 @@ export function builtinTemplates(): ReportTemplate[] {
 }
 
 /** Fill missing fields from defaults so old saves keep working when options are added */
-export function withDefaults(options: Partial<ReportOptions> | undefined, base: ReportOptions) {
+export function withDefaults(options: Partial<ReportOptions> | undefined, base: ReportOptions): ReportOptions {
   return {
+    layout: options?.layout === 'diagnostic'
+      ? 'diagnostic'
+      : 'classic',
     syntax: {
       ...base.syntax,
       // Saves from before these options existed: json tag on, asterisk skipping off

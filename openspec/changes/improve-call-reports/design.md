@@ -21,3 +21,11 @@ The same formatter supplies both copy menus. Markdown can use tables and HTML di
 - Summaries repeat some detail. Keep them short, respect the per-report toggles, and snapshot legacy and diagnostic formats.
 - A summary cannot recover a non-preserved body or infer infrastructure conditions. Report only the recorded evidence and keep literal payloads subject to the existing masking options.
 - Native platform rendering and a blind agent exercise are acceptance checks, not properties proved by snapshots.
+
+## Playground findings
+
+- Fifteen baseline clipboard files (four cases plus the error batch across three templates) match the new Classic formatter byte for byte. The stock playground had no failed stream or retry scenario; those runs use the scenarios added in this change.
+- On the captured validation input, a top summary puts reproduction on Markdown line 5 versus line 20 for the same summary at the end. This is a placement check, not a timed reading study.
+- A four-event stream with a 700-character budget keeps all four events with compact Diagnostic JSON; tail sampling keeps one. At 600 characters Diagnostic drops the event block and discloses it, while shorter Classic still fits the event block.
+- An independent agent, given only the Classic Markdown validation report, diagnosed both issues without clarification and reproduced the failure in a clean Nuxt playground. This did not compare agents or prove a speed gain. The new template flow retains duplication and adds an example preview before any events are recorded.
+- Markdown was checked with GitHub's renderer. Discord and LINE native rendering was not checked; their clipboard outputs and limits are covered by tests.

@@ -483,6 +483,38 @@ describe('panel-app empty call list', () => {
     expect(message()).toBe('No calls yet')
   })
 
+  it('can duplicate and customize a report before any calls are recorded', async () => {
+    panel = await mount()
+    const { root } = panel
+    const button = (label: string) => [
+      ...root.querySelectorAll('button'),
+    ].find(item => item.textContent?.trim() === label)!
+    root.querySelector<HTMLButtonElement>('button[aria-label="Settings"]')!.click()
+    await flush()
+    button('Report templates').click()
+    await flush()
+    expect(root.querySelector('.preview-head')?.textContent).toContain('Preview: example call')
+    expect(root.querySelector('.preview pre')?.textContent).toContain('### ')
+
+    button('Copy as new template').click()
+    await flush()
+    expect(document.activeElement).toBe(root.querySelector('.editor-head input'))
+    button('Plain text').click()
+    await flush()
+    expect(root.querySelector('.preview pre')?.textContent).not.toContain('### ')
+
+    const layout = root.querySelector<HTMLSelectElement>('.editor select')!
+    layout.value = 'diagnostic'
+    layout.dispatchEvent(new Event('change'))
+    await flush()
+    expect(root.querySelector('.preview pre')?.textContent).toContain('Reproduce')
+
+    button('Markdown Default').click()
+    await flush()
+    expect(root.querySelector('.preview pre')?.textContent).toContain('### ')
+    expect(root.querySelector('.preview pre')?.textContent).not.toContain('Reproduce')
+  })
+
   it('shows "No matching calls" when the search matches nothing', async () => {
     channel.setCalls([
       {

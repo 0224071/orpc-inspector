@@ -23,6 +23,7 @@ import { resolveLocale, usePanelSettings } from './panel-settings'
 import { notPreservedSize, RECORD_LIMIT_TEXT, responseField } from './preserved'
 import { buildCallReport, buildErrorsReport, defaultCallSections } from './report'
 import ReportMenu from './report-menu.vue'
+import { buildReportPreview } from './report-preview'
 import { useReportTemplates } from './report-settings'
 import { responseView } from './response-view'
 import SettingsPage from './settings-page.vue'
@@ -397,9 +398,7 @@ function setCopyPart(part: CopyPart, value: boolean) {
 const headersOpen = reactive({ request: false, response: false })
 
 function previewReport(options: ReportOptions) {
-  return visibleErrorCount.value
-    ? buildErrorsReport(visibleCalls.value, options)
-    : ''
+  return buildReportPreview(options, visibleCalls.value, selectionShown.value ? selected.value : undefined)
 }
 
 async function copyReport(target: CopyTarget, templateId: string) {

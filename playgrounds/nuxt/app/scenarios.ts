@@ -1,3 +1,4 @@
+import type { ClientRetryPluginContext } from '@orpc/client/plugins'
 /**
  * Each scenario makes one oRPC call to the Nuxt server routes, producing one record for the panel.
  * Same shape as the vite-vue playground's scenarios; the list itself is separate.
@@ -53,7 +54,7 @@ export async function runScenario(run: () => Promise<unknown>): Promise<Scenario
 
 /** `validatingClient` validates against the contract on the client, so its records carry zod issues */
 export function createScenarios(
-  client: ContractRouterClient<typeof contract>,
+  client: ContractRouterClient<typeof contract, ClientRetryPluginContext>,
   validatingClient: ContractRouterClient<typeof contract>,
 ): Scenario[] {
   return [
@@ -96,6 +97,31 @@ export function createScenarios(
       path: '/rpc/profile/update',
       outcome: 'http',
       run: () => client.profile.update({ name: 'Ming Wang', email: 'ming@taken.example' }),
+    },
+    {
+      key: 'stream-error',
+      label: 'Stream fails after events',
+      expect: 'HTTP 200, four events, then an error while consuming the stream',
+      procedure: 'diagnostics.stream',
+      method: 'POST',
+      path: '/rpc/diagnostics/stream',
+      outcome: 'http',
+      run: async () => {
+        const events = await client.diagnostics.stream({ count: 4 })
+        return Array.fromAsync(events)
+      },
+    },
+    {
+      key: 'retry-error',
+      label: '503 after two retries',
+      expect: 'One failed call with three HTTP 503 attempts',
+      procedure: 'diagnostics.retry',
+      method: 'POST',
+      path: '/rpc/diagnostics/retry',
+      outcome: 'http',
+      run: () => client.diagnostics.retry(undefined, {
+        context: { retry: 2, retryDelay: 0 },
+      }),
     },
   ]
 }

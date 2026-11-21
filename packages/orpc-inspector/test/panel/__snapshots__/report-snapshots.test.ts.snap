@@ -1,0 +1,1316 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Discord reports > classic > copies preserved 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > classic > copies retry 1`] = `
+"### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable"
+`;
+
+exports[`Discord reports > classic > copies server 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > classic > copies ssr 1`] = `
+"### ✅ Success — \`profile.get\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Response**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > classic > copies stream 1`] = `
+"### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+**Events (4)**
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`"
+`;
+
+exports[`Discord reports > classic > copies the visible error batch 1`] = `
+"## oRPC error report (5 calls)
+
+────────
+
+### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+- \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+- \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`
+
+────────
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`
+
+────────
+
+### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+**Events (4)**
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`
+
+────────
+
+### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable
+
+────────
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > classic > copies validation 1`] = `
+"### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+- \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+- \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > diagnostic > copies preserved 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > diagnostic > copies retry 1`] = `
+"### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Failure**: SERVICE_UNAVAILABLE: Playground service is unavailable
+- **Reproduce**: Invoke the procedure via the client. Use the same retry settings. No input was captured.
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable"
+`;
+
+exports[`Discord reports > diagnostic > copies server 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > diagnostic > copies ssr 1`] = `
+"### ✅ Success — \`profile.get\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Response**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`Discord reports > diagnostic > copies stream 1`] = `
+"### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Failure**: INTERNAL_SERVER_ERROR: Stream failed after sending events
+- **Reproduce**: Invoke the procedure via the client. Consume the stream to observe its outcome. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+**Events (4)**
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`"
+`;
+
+exports[`Discord reports > diagnostic > copies the visible error batch 1`] = `
+"## oRPC error report (5 calls)
+
+────────
+
+### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Failure**: \`name\`: Too small: expected string to have >=2 characters
+- **Reproduce**: Invoke the procedure via the client. The original was blocked before send. Input is not included.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+- \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+- …1 more
+
+────────
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Input is not included.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+────────
+
+### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Failure**: INTERNAL_SERVER_ERROR: Stream failed after sending events
+- **Reproduce**: Invoke the procedure via the client. Consume the stream to observe its outcome. Input is not included.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+────────
+
+### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Failure**: SERVICE_UNAVAILABLE: Playground service is unavailable
+- **Reproduce**: Invoke the procedure via the client. Use the same retry settings. Input is not included.
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable
+
+────────
+
+…1 more calls not listed
+
+…Evidence omitted to fit the length limit."
+`;
+
+exports[`Discord reports > diagnostic > copies validation 1`] = `
+"### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Failure**: \`name\`: Too small: expected string to have >=2 characters
+- **Reproduce**: Invoke the procedure via the client. The original was blocked before send. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+- \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+- \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies preserved 1`] = `
+"[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies retry 1`] = `
+"[⚠️ Error] \`diagnostics.retry\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+• Attempts: 3 (503 → 503 → 503)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · SERVICE_UNAVAILABLE: Playground service is unavailable"
+`;
+
+exports[`LINE reports > classic > copies server 1`] = `
+"[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies ssr 1`] = `
+"[✅ Success] \`profile.get\`
+
+• Request: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Response
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies stream 1`] = `
+"[⚠️ Error] \`diagnostics.stream\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · INTERNAL_SERVER_ERROR: Stream failed after sending events
+
+Input
+\`\`\`
+{
+  "count": 4
+}
+\`\`\`
+
+Events (4)
+\`\`\`
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies the visible error batch 1`] = `
+"[oRPC error report (5 calls)]
+
+────────
+
+[❌ Input does not match schema] \`profile.update\`
+
+• Request: POST profile.update (not sent · Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+• \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+• \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+Input
+\`\`\`
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`
+
+────────
+
+[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`
+
+────────
+
+[⚠️ Error] \`diagnostics.stream\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · INTERNAL_SERVER_ERROR: Stream failed after sending events
+
+Input
+\`\`\`
+{
+  "count": 4
+}
+\`\`\`
+
+Events (4)
+\`\`\`
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`
+
+────────
+
+[⚠️ Error] \`diagnostics.retry\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+• Attempts: 3 (503 → 503 → 503)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · SERVICE_UNAVAILABLE: Playground service is unavailable
+
+────────
+
+[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > classic > copies validation 1`] = `
+"[❌ Input does not match schema] \`profile.update\`
+
+• Request: POST profile.update (not sent · Client)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+• \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+• \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+Input
+\`\`\`
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies preserved 1`] = `
+"[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+• Failure: CONFLICT: Email is already in use
+• Reproduce: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies retry 1`] = `
+"[⚠️ Error] \`diagnostics.retry\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+• Failure: SERVICE_UNAVAILABLE: Playground service is unavailable
+• Reproduce: Invoke the procedure via the client. Use the same retry settings. No input was captured.
+• Attempts: 3 (503 → 503 → 503)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · SERVICE_UNAVAILABLE: Playground service is unavailable"
+`;
+
+exports[`LINE reports > diagnostic > copies server 1`] = `
+"[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+• Failure: CONFLICT: Email is already in use
+• Reproduce: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies ssr 1`] = `
+"[✅ Success] \`profile.get\`
+
+• Request: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Response
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies stream 1`] = `
+"[⚠️ Error] \`diagnostics.stream\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+• Failure: INTERNAL_SERVER_ERROR: Stream failed after sending events
+• Reproduce: Invoke the procedure via the client. Consume the stream to observe its outcome. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · INTERNAL_SERVER_ERROR: Stream failed after sending events
+
+Input
+\`\`\`
+{
+  "count": 4
+}
+\`\`\`
+
+Events (4)
+\`\`\`
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies the visible error batch 1`] = `
+"[oRPC error report (5 calls)]
+
+────────
+
+[❌ Input does not match schema] \`profile.update\`
+
+• Request: POST profile.update (not sent · Client)
+• Failure: \`name\`: Too small: expected string to have >=2 characters
+• Reproduce: Invoke the procedure via the client. The original was blocked before send. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+• \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+• \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+Input
+\`\`\`
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`
+
+────────
+
+[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+• Failure: CONFLICT: Email is already in use
+• Reproduce: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`
+
+────────
+
+[⚠️ Error] \`diagnostics.stream\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+• Failure: INTERNAL_SERVER_ERROR: Stream failed after sending events
+• Reproduce: Invoke the procedure via the client. Consume the stream to observe its outcome. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · INTERNAL_SERVER_ERROR: Stream failed after sending events
+
+Input
+\`\`\`
+{
+  "count": 4
+}
+\`\`\`
+
+Events (4)
+\`\`\`
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  "…1 more items"
+]
+\`\`\`
+
+────────
+
+[⚠️ Error] \`diagnostics.retry\`
+
+• Request: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+• Failure: SERVICE_UNAVAILABLE: Playground service is unavailable
+• Reproduce: Invoke the procedure via the client. Use the same retry settings. No input was captured.
+• Attempts: 3 (503 → 503 → 503)
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · SERVICE_UNAVAILABLE: Playground service is unavailable
+
+────────
+
+[⚠️ Error] \`profile.update\`
+
+• Request: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+• Failure: CONFLICT: Email is already in use
+• Reproduce: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+Error · CONFLICT: Email is already in use
+
+Input
+\`\`\`
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`LINE reports > diagnostic > copies validation 1`] = `
+"[❌ Input does not match schema] \`profile.update\`
+
+• Request: POST profile.update (not sent · Client)
+• Failure: \`name\`: Too small: expected string to have >=2 characters
+• Reproduce: Invoke the procedure via the client. The original was blocked before send. Use the Input below as a starting point; it may be masked or shortened.
+• Time: 2026-01-02 03:04:05 · 21ms
+
+• \`name\` (\`too_small\`): Too small: expected string to have >=2 characters, actual value \`"X"\`
+• \`email\` (\`invalid_format\`): Invalid email address, actual value \`"not-an-email"\`
+
+Input
+\`\`\`
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > classic > copies preserved 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > classic > copies retry 1`] = `
+"### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable"
+`;
+
+exports[`Markdown reports > classic > copies server 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > classic > copies ssr 1`] = `
+"### ✅ Success — \`profile.get\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Response**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > classic > copies stream 1`] = `
+"### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+<details><summary>Events (4)</summary>
+
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  {
+    "sequence": 3,
+    "token": "***"
+  }
+]
+\`\`\`
+
+</details>"
+`;
+
+exports[`Markdown reports > classic > copies the visible error batch 1`] = `
+"## oRPC error report (5 calls)
+
+---
+
+### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+| Field | Code | Issue | Actual value |
+| --- | --- | --- | --- |
+| \`name\` | \`too_small\` | Too small: expected string to have >=2 characters | \`"X"\` |
+| \`email\` | \`invalid_format\` | Invalid email address | \`"not-an-email"\` |
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`
+
+---
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`
+
+---
+
+### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+<details><summary>Events (4)</summary>
+
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  {
+    "sequence": 3,
+    "token": "***"
+  }
+]
+\`\`\`
+
+</details>
+
+---
+
+### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable
+
+---
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > classic > copies validation 1`] = `
+"### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+| Field | Code | Issue | Actual value |
+| --- | --- | --- | --- |
+| \`name\` | \`too_small\` | Too small: expected string to have >=2 characters | \`"X"\` |
+| \`email\` | \`invalid_format\` | Invalid email address | \`"not-an-email"\` |
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > diagnostic > copies preserved 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > diagnostic > copies retry 1`] = `
+"### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Failure**: SERVICE_UNAVAILABLE: Playground service is unavailable
+- **Reproduce**: Invoke the procedure via the client. Use the same retry settings. No input was captured.
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable"
+`;
+
+exports[`Markdown reports > diagnostic > copies server 1`] = `
+"### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > diagnostic > copies ssr 1`] = `
+"### ✅ Success — \`profile.get\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/get → 200 (SSR)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Response**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@example.com"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > diagnostic > copies stream 1`] = `
+"### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Failure**: INTERNAL_SERVER_ERROR: Stream failed after sending events
+- **Reproduce**: Invoke the procedure via the client. Consume the stream to observe its outcome. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+<details><summary>Events (4)</summary>
+
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  {
+    "sequence": 3,
+    "token": "***"
+  }
+]
+\`\`\`
+
+</details>"
+`;
+
+exports[`Markdown reports > diagnostic > copies the visible error batch 1`] = `
+"## oRPC error report (5 calls)
+
+---
+
+### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Failure**: \`name\`: Too small: expected string to have >=2 characters
+- **Reproduce**: Invoke the procedure via the client. The original was blocked before send. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+| Field | Code | Issue | Actual value |
+| --- | --- | --- | --- |
+| \`name\` | \`too_small\` | Too small: expected string to have >=2 characters | \`"X"\` |
+| \`email\` | \`invalid_format\` | Invalid email address | \`"not-an-email"\` |
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`
+
+---
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`
+
+---
+
+### ⚠️ Error — \`diagnostics.stream\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/stream → 200 (Client)
+- **Failure**: INTERNAL_SERVER_ERROR: Stream failed after sending events
+- **Reproduce**: Invoke the procedure via the client. Consume the stream to observe its outcome. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · INTERNAL_SERVER_ERROR**: Stream failed after sending events
+
+**Input**
+\`\`\`json
+{
+  "count": 4
+}
+\`\`\`
+
+<details><summary>Events (4)</summary>
+
+\`\`\`json
+[
+  {
+    "sequence": 0,
+    "token": "***"
+  },
+  {
+    "sequence": 1,
+    "token": "***"
+  },
+  {
+    "sequence": 2,
+    "token": "***"
+  },
+  {
+    "sequence": 3,
+    "token": "***"
+  }
+]
+\`\`\`
+
+</details>
+
+---
+
+### ⚠️ Error — \`diagnostics.retry\`
+
+- **Request**: POST http://localhost:3000/rpc/diagnostics/retry → 503 (Client)
+- **Failure**: SERVICE_UNAVAILABLE: Playground service is unavailable
+- **Reproduce**: Invoke the procedure via the client. Use the same retry settings. No input was captured.
+- **Attempts**: 3 (503 → 503 → 503)
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · SERVICE_UNAVAILABLE**: Playground service is unavailable
+
+---
+
+### ⚠️ Error — \`profile.update\`
+
+- **Request**: POST http://localhost:3000/rpc/profile/update → 409 (Client · from a previous page)
+- **Failure**: CONFLICT: Email is already in use
+- **Reproduce**: Invoke the procedure via the client. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+**Error · CONFLICT**: Email is already in use
+
+**Input**
+\`\`\`json
+{
+  "name": "Ming Wang",
+  "email": "ming@taken.example"
+}
+\`\`\`"
+`;
+
+exports[`Markdown reports > diagnostic > copies validation 1`] = `
+"### ❌ Input does not match schema — \`profile.update\`
+
+- **Request**: POST profile.update (not sent · Client)
+- **Failure**: \`name\`: Too small: expected string to have >=2 characters
+- **Reproduce**: Invoke the procedure via the client. The original was blocked before send. Use the Input below as a starting point; it may be masked or shortened.
+- **Time**: 2026-01-02 03:04:05 · 21ms
+
+| Field | Code | Issue | Actual value |
+| --- | --- | --- | --- |
+| \`name\` | \`too_small\` | Too small: expected string to have >=2 characters | \`"X"\` |
+| \`email\` | \`invalid_format\` | Invalid email address | \`"not-an-email"\` |
+
+**Input**
+\`\`\`json
+{
+  "name": "X",
+  "email": "not-an-email"
+}
+\`\`\`"
+`;

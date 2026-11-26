@@ -13,6 +13,14 @@ Copy failed calls as a message you can paste into an issue or chat.
 
 The arrow next to either button switches the format: **Markdown**, **Discord** or **LINE**. The main button reuses the last one.
 
+## Customize a platform or prepare a report for an agent
+
+1. In **Settings → Report templates**, select the closest template and click **Copy as new template**.
+2. Rename the copy and choose syntax in **Quick** or fine-tune it in **Advanced**. The preview uses visible errors, a selected call, or a labeled example.
+3. To put failure and reproduction context above the bodies, choose **Diagnostic** under **Report layout**. Choose the copy from either report menu.
+
+Before sharing, check for sensitive text outside masked fields and add any environment or setup steps not captured by the inspector. The report does not replay calls.
+
 ## Change what a report includes
 
 1. Open **Report settings…** from that arrow menu, or **Settings → Report templates**, and switch to **Advanced**.

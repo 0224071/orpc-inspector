@@ -2,6 +2,7 @@
 import type { MessageKey } from './i18n'
 import type { LocaleSetting } from './panel-settings'
 import type { ReportOptions } from './report'
+import type { ReportPreview } from './report-preview'
 import type { useReportTemplates } from './report-settings'
 import { messages, t } from './i18n'
 import { browserLocale } from './panel-settings'
@@ -12,7 +13,7 @@ export type SettingsCategory = 'display' | 'reports'
 defineProps<{
   templates: ReturnType<typeof useReportTemplates>
   /** Report generated from the options being edited, for comparison */
-  preview: (options: ReportOptions) => string
+  preview: (options: ReportOptions) => ReportPreview
 }>()
 
 const emit = defineEmits<{

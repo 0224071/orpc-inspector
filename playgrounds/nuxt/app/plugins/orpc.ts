@@ -1,6 +1,8 @@
+import type { ClientRetryPluginContext } from '@orpc/client/plugins'
 import type { ContractRouterClient } from '@orpc/contract'
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
+import { ClientRetryPlugin } from '@orpc/client/plugins'
 import { RequestValidationPlugin, ResponseValidationPlugin } from '@orpc/contract/plugins'
 import { contract } from '#shared/contract'
 
@@ -12,9 +14,10 @@ export default defineNuxtPlugin(() => {
     headers: { authorization: 'Bearer nuxt-playground-secret' },
     plugins: [
       useOrpcInspectorPlugin(),
+      new ClientRetryPlugin(),
     ],
   })
-  const client: ContractRouterClient<typeof contract> = createORPCClient(link)
+  const client: ContractRouterClient<typeof contract, ClientRetryPluginContext> = createORPCClient(link)
   // Validates against the contract on the client, so the panel records zod issues (and their zodLocale translations)
   const validatingLink = new RPCLink({
     url,

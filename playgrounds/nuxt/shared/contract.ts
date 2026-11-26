@@ -1,4 +1,4 @@
-import { oc } from '@orpc/contract'
+import { eventIterator, oc } from '@orpc/contract'
 import * as z from 'zod'
 
 const profileSchema = z.object({
@@ -10,5 +10,15 @@ export const contract = {
   profile: {
     get: oc.output(profileSchema),
     update: oc.input(profileSchema).output(profileSchema),
+  },
+  diagnostics: {
+    stream: oc.input(z.object({
+      count: z.int().min(1).max(20),
+    }))
+      .output(eventIterator(z.object({
+        sequence: z.int(),
+        token: z.string(),
+      }))),
+    retry: oc.output(z.string()),
   },
 }

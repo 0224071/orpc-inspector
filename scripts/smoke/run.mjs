@@ -40,9 +40,17 @@ const MANIFESTS = {
     dependencies: ORPC,
     devDependencies: { 'orpc-inspector': tarball, '@vitejs/devtools': '^0.8.0', 'vite': '^8.3.0' },
   }),
-  nuxt: tarball => ({
+  nuxt: (tarball, pm) => ({
     dependencies: { ...ORPC, nuxt: '^4.6.0', vue: '^3.5.0' },
-    devDependencies: { 'orpc-inspector': tarball, '@nuxt/devtools': '^4.0.0', '@nuxt/kit': '^4.6.0' },
+    devDependencies: {
+      'orpc-inspector': tarball,
+      '@nuxt/devtools': '^4.0.0',
+      '@nuxt/kit': '^4.6.0',
+      // pnpm 10 can hang resolving Vite as an implicit peer of Nuxt DevTools.
+      ...(pm === 'pnpm'
+        ? { vite: '^8.3.0' }
+        : {}),
+    },
   }),
 }
 
@@ -393,7 +401,7 @@ async function main() {
       name: 'orpc-inspector-smoke',
       private: true,
       type: 'module',
-      ...MANIFESTS[args.app](spec),
+      ...MANIFESTS[args.app](spec, args.pm),
     }, null, 2)}\n`)
 
     await install(appDir, args.version ? 3 : 1)
